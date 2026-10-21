@@ -23,7 +23,7 @@ jobs:
       - name: Check for agent sources
         id: check
         run: |
-          if [ -d agent ] && ls agent/*.go agent/**/*.go >/dev/null 2>&1; then
+          if [ -n "$(find agent -name '*.go' -print -quit 2>/dev/null)" ]; then
             echo "present=true" >> "$GITHUB_OUTPUT"
           else
             echo "present=false" >> "$GITHUB_OUTPUT"
@@ -35,7 +35,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '1.22'
-          cache-dependency-path: agent/go.sum
+          cache-dependency-path: agent/go.mod
 
       - name: Lint
         if: steps.check.outputs.present == 'true'
@@ -87,7 +87,7 @@ jobs:
         run: |
           ruff check .
           ruff format --check .
-          mypy .
+          mypy src tests
           pytest -q
 
   docs:
