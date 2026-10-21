@@ -9,7 +9,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="LEJUSEC_", env_file=".env", extra="ignore")
 
-    database_url: str = "postgresql://lejusec:lejusec@localhost:5432/lejusec"
+    # 기본값은 바로 실행 가능한 로컬 SQLite. 운영/compose에서는
+    # LEJUSEC_DATABASE_URL 로 PostgreSQL(postgresql+psycopg://...)을 주입한다.
+    database_url: str = "sqlite:///./lejusec-dev.db"
     vector_db_url: str = "http://localhost:6333"
     log_level: str = "INFO"
 

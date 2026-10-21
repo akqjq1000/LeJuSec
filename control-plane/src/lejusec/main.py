@@ -1,13 +1,26 @@
-"""컨트롤 플레인 API 진입점 (Phase 1 골격).
+"""컨트롤 플레인 API 진입점 (Phase 1).
 
-지금은 헬스체크만 제공한다. 자산 CMDB·오케스트레이터·RAG는 로드맵에 따라 추가된다.
+헬스체크 + 자산 CMDB(등록/지정/해제). 오케스트레이터·RAG는 로드맵에 따라 추가된다.
 """
+
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
 from lejusec import __version__
+from lejusec.api.assets import router as assets_router
+from lejusec.db import init_db
 
-app = FastAPI(title="LeJuSec Control Plane", version=__version__)
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
+    init_db()
+    yield
+
+
+app = FastAPI(title="LeJuSec Control Plane", version=__version__, lifespan=lifespan)
+app.include_router(assets_router)
 
 
 @app.get("/healthz")

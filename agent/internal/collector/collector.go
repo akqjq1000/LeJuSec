@@ -1,19 +1,26 @@
 // Package collector gathers inventory from the target system: installed
 // packages, running processes, and their associated config/log files.
+//
+// Phase 1: real collection on Linux hosts (shelling out to the package
+// manager and reading /proc). On unsupported platforms collection returns
+// empty results without error, so the agent stays buildable everywhere.
 package collector
 
-// Package describes a single installed package.
-type Package struct {
-	Name    string
-	Version string
-	Source  string // "rpm", "dpkg", "pacman", "source"
+// Inventory is a point-in-time snapshot collected from a host.
+type Inventory struct {
+	Packages  []Package `json:"packages"`
+	Processes []Process `json:"processes"`
 }
 
-// Packages returns installed packages discovered on the host.
-//
-// Phase 1 skeleton: the real implementation shells out to the platform
-// package manager (rpm -qa / dpkg -l / pacman -Q) and parses its output.
-// See docs/design/features.md (기능 2).
-func Packages() ([]Package, error) {
-	return []Package{}, nil
+// Collect gathers a full inventory snapshot.
+func Collect() (Inventory, error) {
+	pkgs, err := Packages()
+	if err != nil {
+		return Inventory{}, err
+	}
+	procs, err := Processes()
+	if err != nil {
+		return Inventory{}, err
+	}
+	return Inventory{Packages: pkgs, Processes: procs}, nil
 }

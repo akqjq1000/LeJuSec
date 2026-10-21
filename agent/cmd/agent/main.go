@@ -1,10 +1,11 @@
 // Command agent is the LeJuSec target-system agent.
 //
-// Phase 1 skeleton: collects host inventory. Scanning, FIM, and signed
-// transport are added per docs/roadmap.md.
+// Phase 1: collects a host inventory (packages, processes) and prints it as
+// JSON. Scanning, FIM, and signed transport are added per docs/roadmap.md.
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
@@ -24,10 +25,16 @@ func main() {
 		return
 	}
 
-	pkgs, err := collector.Packages()
+	inv, err := collector.Collect()
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "collect packages:", err)
+		fmt.Fprintln(os.Stderr, "collect:", err)
 		os.Exit(1)
 	}
-	fmt.Printf("lejusec-agent %s: collected %d packages\n", version, len(pkgs))
+
+	enc := json.NewEncoder(os.Stdout)
+	enc.SetIndent("", "  ")
+	if err := enc.Encode(inv); err != nil {
+		fmt.Fprintln(os.Stderr, "encode:", err)
+		os.Exit(1)
+	}
 }

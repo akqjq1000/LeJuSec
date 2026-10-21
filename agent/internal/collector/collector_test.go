@@ -2,12 +2,17 @@ package collector
 
 import "testing"
 
-func TestPackagesSkeleton(t *testing.T) {
-	pkgs, err := Packages()
+func TestCollect(t *testing.T) {
+	inv, err := Collect()
 	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
+		t.Fatalf("Collect returned error: %v", err)
 	}
-	if len(pkgs) != 0 {
-		t.Fatalf("expected 0 packages from skeleton, got %d", len(pkgs))
+	// Package/process counts are environment-dependent; ensure the snapshot
+	// is well-formed (non-nil slices) so JSON output is always a list.
+	if inv.Packages == nil {
+		t.Fatal("expected non-nil Packages slice")
+	}
+	if inv.Processes == nil {
+		t.Fatal("expected non-nil Processes slice")
 	}
 }
