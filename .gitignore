@@ -1,0 +1,37 @@
+# Secrets / local config
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+*.p12
+secrets/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+
+# Go
+/bin/
+*.exe
+*.test
+*.out
+vendor/
+
+# Tooling / OS
+.DS_Store
+Thumbs.db
+*.log
+coverage.*
+sbom.*.json
+.idea/
+.vscode/

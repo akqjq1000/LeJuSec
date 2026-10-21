@@ -1,0 +1,80 @@
+name: Security
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 3 * * 1'   # 매주 월요일 03:00 UTC
+
+permissions:
+  contents: read
+  security-events: write   # SARIF 업로드
+
+concurrency:
+  group: security-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gitleaks:
+    name: Secret scan (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # 히스토리 전체 스캔
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  trivy-fs:
+    name: Dependency / FS scan (Trivy)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Trivy filesystem scan
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          format: sarif
+          output: trivy-results.sarif
+          severity: CRITICAL,HIGH
+          exit-code: '0'   # 리포트 우선, 게이팅은 성숙 후 도입
+      - name: Upload SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-results.sarif
+
+  codeql:
+    name: CodeQL (SAST)
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [go, python]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Detect language sources
+        id: detect
+        run: |
+          case "${{ matrix.language }}" in
+            go)     [ -d agent ] && echo "present=true" >> "$GITHUB_OUTPUT" || echo "present=false" >> "$GITHUB_OUTPUT" ;;
+            python) [ -d control-plane ] && echo "present=true" >> "$GITHUB_OUTPUT" || echo "present=false" >> "$GITHUB_OUTPUT" ;;
+          esac
+
+      - name: Initialize CodeQL
+        if: steps.detect.outputs.present == 'true'
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+
+      - name: Autobuild
+        if: steps.detect.outputs.present == 'true'
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Analyze
+        if: steps.detect.outputs.present == 'true'
+        uses: github/codeql-action/analyze@v3
