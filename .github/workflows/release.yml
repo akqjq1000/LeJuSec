@@ -14,7 +14,6 @@ jobs:
   agent-binaries:
     name: Build agent binaries
     runs-on: ubuntu-latest
-    if: ${{ hashFiles('agent/go.mod') != '' }}
     strategy:
       matrix:
         goos: [linux]
