@@ -148,3 +148,19 @@ class IntegrityEventOut(BaseModel):
 class BaselineSummary(BaseModel):
     files: int
     has_agent_hash: bool
+
+
+class InventorySummaryOut(BaseModel):
+    package_count: int
+    process_count: int
+    captured_at: dt.datetime | None
+
+
+class SummaryOut(BaseModel):
+    assets_total: int
+    assets_managed: int
+    checks_pass: int
+    checks_fail: int
+    checks_na: int
+    remediations_open: int
+    integrity_high_critical: int

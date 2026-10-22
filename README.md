@@ -56,6 +56,7 @@ Agent (대상 시스템, Go 단일 바이너리)
 LeJuSec/
 ├─ agent/            # 대상 시스템 에이전트 (Go)
 ├─ control-plane/    # 컨트롤 플레인 API/오케스트레이터 (Python, FastAPI)
+├─ web/              # 운영자 콘솔 GUI (React + TypeScript, Vite) — G1
 ├─ docs/             # 설계·개발·운영 문서
 │  ├─ architecture.md
 │  ├─ roadmap.md
