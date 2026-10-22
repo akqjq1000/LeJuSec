@@ -35,6 +35,11 @@ class Settings(BaseSettings):
     # RAG 근거 검색 백엔드: "embedding"(기본, 해싱 벡터 코사인) | "lexical"(토큰 겹침).
     rag_backend: str = "embedding"
 
+    # 조치 생성 백엔드: "template"(기본, 지식베이스) | "llm"(Claude; 실패 시 템플릿 폴백).
+    generator_backend: str = "template"
+    llm_api_key: str = ""
+    llm_model: str = "claude-opus-5-5"
+
     @property
     def cors_origin_list(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
