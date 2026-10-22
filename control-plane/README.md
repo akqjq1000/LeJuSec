@@ -68,6 +68,13 @@ CA/서버/클라이언트 개인키(`*.key`)는 `.gitignore`로 커밋되지 않
 에이전트 서명 엔드포인트(인벤토리/스캔/무결성 수신)는 서명으로 인증되어 면제된다.
 비우면 인증 비활성(개발). 쓰기 성공은 `lejusec.audit` 로거로 감사 기록된다.
 
+### 조치 생성기
+
+`LEJUSEC_GENERATOR_BACKEND`(`template` 기본 | `llm`). `llm` + `LEJUSEC_LLM_API_KEY`
+설정 시 Claude(`LEJUSEC_LLM_MODEL`, 기본 `claude-opus-5-5`)로 조치를 생성한다
+(`pip install -e ".[llm]"` 필요). LLM 출력이 정적 분석을 통과하지 못하거나 호출이
+실패하면 템플릿으로 폴백한다.
+
 ## 구조
 
 ```

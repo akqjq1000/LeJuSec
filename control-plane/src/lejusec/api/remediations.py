@@ -15,7 +15,7 @@ from lejusec import sandbox
 from lejusec.api.common import get_or_404
 from lejusec.auth import get_actor, record_audit
 from lejusec.db import get_session
-from lejusec.generator import generate_remediations
+from lejusec.generator import build_generator
 from lejusec.models import RemediationRow, ScanResultRow
 from lejusec.remediation import Remediation, static_analysis
 from lejusec.schemas import GenerateAck, RemediationOut, VerifyOut
@@ -74,7 +74,7 @@ def generate(asset_id: int, session: SessionDep) -> GenerateAck:
     ).all()
 
     rows: list[RemediationRow] = []
-    for remediation in generate_remediations([r.check_id for r in failed]):
+    for remediation in build_generator()([r.check_id for r in failed]):
         violations = static_analysis(remediation.script)
         row = RemediationRow(
             asset_id=asset_id,
