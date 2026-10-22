@@ -25,5 +25,12 @@ class Settings(BaseSettings):
     tls_ca_certs: str = ""
     tls_require_client_cert: bool = True
 
+    # GUI(운영자 콘솔)용 CORS 허용 출처. 기본값은 Vite 개발 서버.
+    cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
+
+    @property
+    def cors_origin_list(self) -> list[str]:
+        return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
+
 
 settings = Settings()

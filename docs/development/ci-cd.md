@@ -22,6 +22,7 @@ PR과 `main` 푸시에서 실행.
 | `agent` | `agent/` 존재 시: golangci-lint, `go vet`, `go test`, `go build` |
 | `control-plane` | `control-plane/` 존재 시: ruff(lint+format), mypy, pytest |
 | `docs` | Markdown 링크 검사 |
+| `web` | `web/` 존재 시: `npm ci`, eslint, tsc, vitest, vite build |
 
 - 캐시: Go 모듈, pip/uv 캐시.
 - 병렬 매트릭스: OS(ubuntu), 언어 버전.

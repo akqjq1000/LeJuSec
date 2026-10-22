@@ -14,7 +14,14 @@ from sqlalchemy.orm import Session
 from lejusec.api.common import get_or_404, read_signed_body
 from lejusec.db import get_session
 from lejusec.models import Asset, InventorySnapshot
-from lejusec.schemas import AssetCreate, AssetRead, InventoryAck, InventoryIn, KeyIn
+from lejusec.schemas import (
+    AssetCreate,
+    AssetRead,
+    InventoryAck,
+    InventoryIn,
+    InventorySummaryOut,
+    KeyIn,
+)
 
 router = APIRouter(prefix="/assets", tags=["assets"])
 
@@ -97,6 +104,25 @@ async def ingest_inventory(asset_id: int, request: Request, session: SessionDep)
     session.refresh(snapshot)
     return InventoryAck(
         snapshot_id=snapshot.id,
+        package_count=snapshot.package_count,
+        process_count=snapshot.process_count,
+        captured_at=snapshot.captured_at,
+    )
+
+
+@router.get("/{asset_id}/inventory", response_model=InventorySummaryOut)
+def get_inventory(asset_id: int, session: SessionDep) -> InventorySummaryOut:
+    """최근 인벤토리 스냅샷 요약(패키지/프로세스 수)."""
+    get_or_404(session, asset_id)
+    snapshot = session.scalar(
+        select(InventorySnapshot)
+        .where(InventorySnapshot.asset_id == asset_id)
+        .order_by(InventorySnapshot.id.desc())
+        .limit(1)
+    )
+    if snapshot is None:
+        return InventorySummaryOut(package_count=0, process_count=0, captured_at=None)
+    return InventorySummaryOut(
         package_count=snapshot.package_count,
         process_count=snapshot.process_count,
         captured_at=snapshot.captured_at,

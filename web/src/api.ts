@@ -1,0 +1,79 @@
+export const API_BASE: string = import.meta.env.VITE_API_BASE ?? 'http://localhost:8000'
+
+async function get<T>(path: string): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`)
+  if (!res.ok) {
+    throw new Error(`${res.status} ${res.statusText}`)
+  }
+  return (await res.json()) as T
+}
+
+export interface Summary {
+  assets_total: number
+  assets_managed: number
+  checks_pass: number
+  checks_fail: number
+  checks_na: number
+  remediations_open: number
+  integrity_high_critical: number
+}
+
+export interface Asset {
+  id: number
+  hostname: string
+  os: string
+  os_version: string
+  role: string
+  managed: boolean
+  agent_status: string
+  public_key: string
+  last_scan_at: string | null
+  created_at: string
+}
+
+export interface InventorySummary {
+  package_count: number
+  process_count: number
+  captured_at: string | null
+}
+
+export interface CheckResult {
+  check_id: string
+  standard: string
+  title: string
+  severity: string
+  status: string
+  reason: string
+  evidence: string[]
+}
+
+export interface IntegrityEvent {
+  path: string
+  change_type: string
+  severity: string
+  detail: string
+  created_at: string
+}
+
+export interface Remediation {
+  id: number
+  check_id: string
+  title: string
+  script: string
+  rollback: string
+  status: string
+  static_ok: boolean
+  static_notes: string
+  verified: boolean
+  verify_notes: string
+}
+
+export const api = {
+  summary: () => get<Summary>('/summary'),
+  assets: () => get<Asset[]>('/assets'),
+  asset: (id: number) => get<Asset>(`/assets/${id}`),
+  inventory: (id: number) => get<InventorySummary>(`/assets/${id}/inventory`),
+  results: (id: number) => get<CheckResult[]>(`/assets/${id}/results`),
+  integrity: (id: number) => get<IntegrityEvent[]>(`/assets/${id}/integrity/events`),
+  remediations: (id: number) => get<Remediation[]>(`/assets/${id}/remediations`),
+}
