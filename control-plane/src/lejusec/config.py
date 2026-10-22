@@ -15,5 +15,15 @@ class Settings(BaseSettings):
     vector_db_url: str = "http://localhost:6333"
     log_level: str = "INFO"
 
+    # 서버 바인드
+    host: str = "127.0.0.1"
+    port: int = 8000
+
+    # mTLS: 세 값이 모두 설정되면 상호 TLS(클라이언트 인증서 요구)로 기동한다.
+    tls_certfile: str = ""
+    tls_keyfile: str = ""
+    tls_ca_certs: str = ""
+    tls_require_client_cert: bool = True
+
 
 settings = Settings()
