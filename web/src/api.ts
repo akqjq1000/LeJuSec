@@ -77,6 +77,19 @@ export interface Remediation {
   verify_notes: string
 }
 
+export interface CheckItem {
+  id: string
+  standard: string
+  title: string
+  severity: string
+  rationale: string
+}
+
+export interface CheckHit {
+  item: CheckItem
+  score: number
+}
+
 export interface GenerateAck {
   generated: number
   proposed: Remediation[]
@@ -96,6 +109,9 @@ export const api = {
   results: (id: number) => get<CheckResult[]>(`/assets/${id}/results`),
   integrity: (id: number) => get<IntegrityEvent[]>(`/assets/${id}/integrity/events`),
   remediations: (id: number) => get<Remediation[]>(`/assets/${id}/remediations`),
+  // 점검 기준 · RAG 근거 (G3)
+  checks: () => get<CheckItem[]>('/checks'),
+  checksSearch: (q: string) => get<CheckHit[]>(`/checks/search?q=${encodeURIComponent(q)}`),
   // HITL 조치 변이 (G2)
   generateRemediations: (id: number) => post<GenerateAck>(`/assets/${id}/remediations`),
   verifyRemediation: (rid: number) => post<VerifyResult>(`/remediations/${rid}/verify`),

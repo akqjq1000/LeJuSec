@@ -71,6 +71,9 @@ h1 { font-size: 20px; margin: 0 0 16px; }
 .kv .k { width: 160px; color: var(--muted); }
 
 .toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+.input { background: var(--panel); border: 1px solid var(--border); color: var(--text);
+  padding: 6px 10px; border-radius: 8px; font-size: 14px; min-width: 260px; }
+.stack { display: flex; flex-direction: column; gap: 10px; }
 button { background: var(--panel); border: 1px solid var(--border); color: var(--text);
   padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 13px; }
 button:hover:not(:disabled) { border-color: var(--accent); }
