@@ -12,6 +12,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from lejusec.api.common import get_or_404, read_signed_body
+from lejusec.auth import get_actor, record_audit
 from lejusec.db import get_session
 from lejusec.models import Asset, InventorySnapshot
 from lejusec.schemas import (
@@ -26,16 +27,18 @@ from lejusec.schemas import (
 router = APIRouter(prefix="/assets", tags=["assets"])
 
 SessionDep = Annotated[Session, Depends(get_session)]
+Actor = Annotated[str, Depends(get_actor)]
 
 
 @router.post("", response_model=AssetRead, status_code=status.HTTP_201_CREATED)
-def register_asset(payload: AssetCreate, session: SessionDep) -> AssetRead:
+def register_asset(payload: AssetCreate, session: SessionDep, actor: Actor) -> AssetRead:
     """시스템을 자산으로 등록한다. hostname은 유일해야 한다."""
     exists = session.scalar(select(Asset).where(Asset.hostname == payload.hostname))
     if exists is not None:
         raise HTTPException(status.HTTP_409_CONFLICT, detail="hostname already registered")
     asset = Asset(**payload.model_dump())
     session.add(asset)
+    record_audit(session, actor, "asset.register", payload.hostname)
     session.commit()
     session.refresh(asset)
     return AssetRead.model_validate(asset)
@@ -53,20 +56,22 @@ def get_asset(asset_id: int, session: SessionDep) -> AssetRead:
 
 
 @router.post("/{asset_id}/manage", response_model=AssetRead)
-def manage_asset(asset_id: int, session: SessionDep) -> AssetRead:
+def manage_asset(asset_id: int, session: SessionDep, actor: Actor) -> AssetRead:
     """관리 시스템으로 지정한다."""
     asset = get_or_404(session, asset_id)
     asset.managed = True
+    record_audit(session, actor, "asset.manage", str(asset_id))
     session.commit()
     session.refresh(asset)
     return AssetRead.model_validate(asset)
 
 
 @router.post("/{asset_id}/unmanage", response_model=AssetRead)
-def unmanage_asset(asset_id: int, session: SessionDep) -> AssetRead:
+def unmanage_asset(asset_id: int, session: SessionDep, actor: Actor) -> AssetRead:
     """관리 시스템 지정을 해제한다."""
     asset = get_or_404(session, asset_id)
     asset.managed = False
+    record_audit(session, actor, "asset.unmanage", str(asset_id))
     session.commit()
     session.refresh(asset)
     return AssetRead.model_validate(asset)
@@ -130,8 +135,9 @@ def get_inventory(asset_id: int, session: SessionDep) -> InventorySummaryOut:
 
 
 @router.delete("/{asset_id}", status_code=status.HTTP_204_NO_CONTENT)
-def deregister_asset(asset_id: int, session: SessionDep) -> None:
+def deregister_asset(asset_id: int, session: SessionDep, actor: Actor) -> None:
     """자산 등록을 삭제한다."""
     asset = get_or_404(session, asset_id)
+    record_audit(session, actor, "asset.deregister", str(asset_id))
     session.delete(asset)
     session.commit()

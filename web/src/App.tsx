@@ -5,6 +5,7 @@ import { Link, Route, Routes } from 'react-router-dom'
 import { api, getToken, setToken } from './api'
 import AssetDetail from './pages/AssetDetail'
 import Assets from './pages/Assets'
+import Audit from './pages/Audit'
 import Checks from './pages/Checks'
 import Dashboard from './pages/Dashboard'
 
@@ -45,6 +46,7 @@ export default function App() {
           <Link to="/">대시보드</Link>
           <Link to="/assets">자산</Link>
           <Link to="/checks">점검 기준</Link>
+          <Link to="/audit">감사</Link>
         </nav>
         <AuthControl />
       </header>
@@ -54,6 +56,7 @@ export default function App() {
           <Route path="/assets" element={<Assets />} />
           <Route path="/assets/:id" element={<AssetDetail />} />
           <Route path="/checks" element={<Checks />} />
+          <Route path="/audit" element={<Audit />} />
         </Routes>
       </main>
     </div>
