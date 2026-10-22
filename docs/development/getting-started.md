@@ -20,19 +20,26 @@ cd LeJuSec
 
 ## 컨트롤 플레인 (Python / FastAPI)
 
-> `control-plane/`는 [Phase 1](../roadmap.md)에서 추가됩니다. 아래는 예정 절차입니다.
-
 ```bash
 cd control-plane
-uv venv && source .venv/bin/activate   # 또는 python -m venv .venv
-uv pip install -e ".[dev]"
-cp .env.example .env                    # 로컬 설정 (비밀은 커밋 금지)
-uvicorn lejusec.main:app --reload
+uv venv
+# 가상환경 활성화 — 셸에 맞게 하나 선택
+source .venv/Scripts/activate        # Git Bash (MINGW64, Windows)
+# PowerShell:     .venv\Scripts\Activate.ps1
+# cmd:            .venv\Scripts\activate.bat
+# Linux · macOS:  source .venv/bin/activate
+uv pip install -e ".[dev]"           # lejusec 설치 (필수)
+cp .env.example .env                 # 로컬 설정 (비밀은 커밋 금지)
+uvicorn lejusec.main:app --reload    # 또는: python -m lejusec.server
 ```
 
-## 에이전트 (Go)
+> **`ModuleNotFoundError: No module named 'lejusec'`** 는 대개 ① venv를 활성화하지
+> 않고 시스템 Python으로 실행했거나 ② `uv pip install -e .`를 하지 않은 경우다.
+> venv를 활성화하지 않고 쓰려면 venv의 Python을 직접 지정한다:
+> `.venv/Scripts/python.exe -m lejusec.server` (Git Bash) /
+> `.venv\Scripts\python.exe -m lejusec.server` (PowerShell·cmd).
 
-> `agent/`는 [Phase 1](../roadmap.md)에서 추가됩니다.
+## 에이전트 (Go)
 
 ```bash
 cd agent

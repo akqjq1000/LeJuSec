@@ -84,10 +84,14 @@ LeJuSec/
 
 ```bash
 cd control-plane
-uv venv && source .venv/bin/activate      # Windows: .venv\Scripts\activate
-uv pip install -e ".[dev]"
+uv venv
+source .venv/Scripts/activate              # Git Bash(MINGW64). PowerShell: .venv\Scripts\Activate.ps1 · Linux/macOS: source .venv/bin/activate
+uv pip install -e ".[dev]"                 # lejusec 설치(필수)
 python -m lejusec.server                   # http://127.0.0.1:8000  (/healthz)
 ```
+
+> venv를 활성화하지 않고 시스템 Python으로 실행하면 `ModuleNotFoundError: No module
+> named 'lejusec'`가 난다. 활성화 없이 쓰려면 `.venv/Scripts/python.exe -m lejusec.server`.
 
 ### 2. 웹 콘솔 (운영자 GUI)
 
