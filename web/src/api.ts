@@ -8,6 +8,15 @@ async function get<T>(path: string): Promise<T> {
   return (await res.json()) as T
 }
 
+async function post<T>(path: string): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, { method: 'POST' })
+  if (!res.ok) {
+    const detail = await res.text().catch(() => '')
+    throw new Error(`${res.status} ${res.statusText}${detail ? `: ${detail}` : ''}`)
+  }
+  return (await res.json()) as T
+}
+
 export interface Summary {
   assets_total: number
   assets_managed: number
@@ -68,6 +77,17 @@ export interface Remediation {
   verify_notes: string
 }
 
+export interface GenerateAck {
+  generated: number
+  proposed: Remediation[]
+}
+
+export interface VerifyResult {
+  ok: boolean
+  notes: string
+  sandbox: string
+}
+
 export const api = {
   summary: () => get<Summary>('/summary'),
   assets: () => get<Asset[]>('/assets'),
@@ -76,4 +96,9 @@ export const api = {
   results: (id: number) => get<CheckResult[]>(`/assets/${id}/results`),
   integrity: (id: number) => get<IntegrityEvent[]>(`/assets/${id}/integrity/events`),
   remediations: (id: number) => get<Remediation[]>(`/assets/${id}/remediations`),
+  // HITL 조치 변이 (G2)
+  generateRemediations: (id: number) => post<GenerateAck>(`/assets/${id}/remediations`),
+  verifyRemediation: (rid: number) => post<VerifyResult>(`/remediations/${rid}/verify`),
+  approveRemediation: (rid: number) => post<Remediation>(`/remediations/${rid}/approve`),
+  rejectRemediation: (rid: number) => post<Remediation>(`/remediations/${rid}/reject`),
 }
