@@ -27,6 +27,11 @@ build/
 *.out
 vendor/
 
+# Local dev databases
+*.db
+*.sqlite
+*.sqlite3
+
 # Tooling / OS
 .DS_Store
 Thumbs.db
