@@ -1,8 +1,8 @@
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 
-import { api, type Asset } from '../api'
+import { api, type Asset, type Remediation } from '../api'
 
 type Tab = 'overview' | 'inventory' | 'checks' | 'integrity' | 'remediations'
 
@@ -158,33 +158,135 @@ function Integrity({ id }: { id: number }) {
 }
 
 function Remediations({ id }: { id: number }) {
+  const qc = useQueryClient()
   const q = useQuery({ queryKey: ['remediations', id], queryFn: () => api.remediations(id) })
-  if (q.isLoading) return <p className="muted">불러오는 중…</p>
-  if (q.error) return <p className="error">{(q.error as Error).message}</p>
+  const [expanded, setExpanded] = useState<number | null>(null)
+
+  const invalidate = () => {
+    void qc.invalidateQueries({ queryKey: ['remediations', id] })
+  }
+  const genM = useMutation({ mutationFn: () => api.generateRemediations(id), onSuccess: invalidate })
+  const verifyM = useMutation({
+    mutationFn: (rid: number) => api.verifyRemediation(rid),
+    onSuccess: invalidate,
+  })
+  const approveM = useMutation({
+    mutationFn: (rid: number) => api.approveRemediation(rid),
+    onSuccess: invalidate,
+  })
+  const rejectM = useMutation({
+    mutationFn: (rid: number) => api.rejectRemediation(rid),
+    onSuccess: invalidate,
+  })
+
+  const busy = genM.isPending || verifyM.isPending || approveM.isPending || rejectM.isPending
+  const actionError =
+    (genM.error as Error | null) ??
+    (verifyM.error as Error | null) ??
+    (approveM.error as Error | null) ??
+    (rejectM.error as Error | null)
   const rems = q.data ?? []
-  if (rems.length === 0) return <p className="muted">생성된 조치안이 없습니다.</p>
+
   return (
-    <table className="table">
-      <thead>
+    <div>
+      <div className="toolbar">
+        <button onClick={() => genM.mutate()} disabled={busy}>
+          불합격 항목 조치안 생성
+        </button>
+        {actionError ? <span className="error">{actionError.message}</span> : null}
+      </div>
+
+      {q.isLoading ? (
+        <p className="muted">불러오는 중…</p>
+      ) : rems.length === 0 ? (
+        <p className="muted">조치안이 없습니다. 위 버튼으로 생성하세요.</p>
+      ) : (
+        <table className="table">
+          <thead>
+            <tr>
+              <th>항목</th>
+              <th>상태</th>
+              <th>정적분석</th>
+              <th>검증</th>
+              <th />
+            </tr>
+          </thead>
+          <tbody>
+            {rems.map((r) => (
+              <RemediationRow
+                key={r.id}
+                r={r}
+                busy={busy}
+                expanded={expanded === r.id}
+                onToggle={() => setExpanded(expanded === r.id ? null : r.id)}
+                onVerify={() => verifyM.mutate(r.id)}
+                onApprove={() => approveM.mutate(r.id)}
+                onReject={() => rejectM.mutate(r.id)}
+              />
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
+  )
+}
+
+interface RowProps {
+  r: Remediation
+  busy: boolean
+  expanded: boolean
+  onToggle: () => void
+  onVerify: () => void
+  onApprove: () => void
+  onReject: () => void
+}
+
+function RemediationRow({ r, busy, expanded, onToggle, onVerify, onApprove, onReject }: RowProps) {
+  const isProposed = r.status === 'proposed'
+  return (
+    <>
+      <tr>
+        <td>
+          {r.check_id} · {r.title}
+        </td>
+        <td>{r.status}</td>
+        <td>
+          <span className={`badge ${r.static_ok ? 'pass' : 'fail'}`}>
+            {r.static_ok ? 'OK' : '위반'}
+          </span>
+        </td>
+        <td>{r.verified ? <span className="badge pass">OK</span> : '-'}</td>
+        <td>
+          <button onClick={onToggle}>{expanded ? '접기' : '상세'}</button>
+        </td>
+      </tr>
+      {expanded ? (
         <tr>
-          <th>항목</th>
-          <th>상태</th>
-          <th>정적분석</th>
-          <th>검증</th>
+          <td colSpan={5}>
+            <div className="detail">
+              {!r.static_ok && r.static_notes ? (
+                <p className="error">정적 분석 위반: {r.static_notes}</p>
+              ) : null}
+              {r.verify_notes ? <p className="muted">검증: {r.verify_notes}</p> : null}
+              <div className="code-label">조치 스크립트</div>
+              <pre>{r.script}</pre>
+              <div className="code-label">롤백</div>
+              <pre>{r.rollback || '(없음)'}</pre>
+              <div className="actions">
+                <button onClick={onVerify} disabled={busy}>
+                  샌드박스 검증
+                </button>
+                <button onClick={onApprove} disabled={busy || !isProposed || !r.static_ok}>
+                  승인
+                </button>
+                <button onClick={onReject} disabled={busy || !isProposed}>
+                  거부
+                </button>
+              </div>
+            </div>
+          </td>
         </tr>
-      </thead>
-      <tbody>
-        {rems.map((r) => (
-          <tr key={r.id}>
-            <td>
-              {r.check_id} · {r.title}
-            </td>
-            <td>{r.status}</td>
-            <td>{r.static_ok ? 'OK' : `위반: ${r.static_notes}`}</td>
-            <td>{r.verified ? 'OK' : '-'}</td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
+      ) : null}
+    </>
   )
 }
