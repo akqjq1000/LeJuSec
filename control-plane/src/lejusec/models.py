@@ -45,3 +45,23 @@ class InventorySnapshot(Base):
     process_count: Mapped[int] = mapped_column(Integer, default=0)
     # 서명이 검증된 원본 JSON 페이로드(증적).
     payload: Mapped[str] = mapped_column(Text)
+
+
+class ScanResultRow(Base):
+    """점검(판정 룰 엔진) 결과 1건. 한 번의 스캔은 동일한 scan_id로 묶인다."""
+
+    __tablename__ = "scan_results"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    asset_id: Mapped[int] = mapped_column(ForeignKey("assets.id", ondelete="CASCADE"), index=True)
+    scan_id: Mapped[str] = mapped_column(String(32), index=True)
+    check_id: Mapped[str] = mapped_column(String(64))
+    standard: Mapped[str] = mapped_column(String(32))
+    title: Mapped[str] = mapped_column(String(255))
+    severity: Mapped[str] = mapped_column(String(16))
+    status: Mapped[str] = mapped_column(String(8))
+    reason: Mapped[str] = mapped_column(String(255))
+    evidence: Mapped[str] = mapped_column(Text)  # JSON 배열(finding check_id 목록)
+    created_at: Mapped[dt.datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
