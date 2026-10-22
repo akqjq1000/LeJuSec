@@ -104,6 +104,29 @@ class RemediationOut(BaseModel):
     static_notes: str
     verified: bool
     verify_notes: str
+    apply_status: str
+
+
+class ApprovedRemediationOut(BaseModel):
+    id: int
+    check_id: str
+    title: str
+    script: str
+    rollback: str
+
+
+class ApplyResultIn(BaseModel):
+    id: int
+    status: str  # applied | rolled_back | failed | skipped
+    output: str = ""
+
+
+class ApplyReportIn(BaseModel):
+    results: list[ApplyResultIn] = Field(default_factory=list)
+
+
+class ApplyReportAck(BaseModel):
+    updated: int
 
 
 class GenerateAck(BaseModel):

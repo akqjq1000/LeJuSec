@@ -83,6 +83,9 @@ class RemediationRow(Base):
     static_notes: Mapped[str] = mapped_column(String(255), default="")
     verified: Mapped[bool] = mapped_column(Boolean, default=False)
     verify_notes: Mapped[str] = mapped_column(String(255), default="")
+    # 에이전트 적용 상태: "" | applied | rolled_back | failed | skipped
+    apply_status: Mapped[str] = mapped_column(String(16), default="")
+    apply_output: Mapped[str] = mapped_column(String(255), default="")
     created_at: Mapped[dt.datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

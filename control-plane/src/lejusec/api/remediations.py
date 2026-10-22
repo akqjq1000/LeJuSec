@@ -7,18 +7,25 @@
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from lejusec import sandbox
-from lejusec.api.common import get_or_404
+from lejusec.api.common import get_or_404, read_signed_body
 from lejusec.auth import get_actor, record_audit
 from lejusec.db import get_session
 from lejusec.generator import build_generator
 from lejusec.models import RemediationRow, ScanResultRow
 from lejusec.remediation import Remediation, static_analysis
-from lejusec.schemas import GenerateAck, RemediationOut, VerifyOut
+from lejusec.schemas import (
+    ApplyReportAck,
+    ApplyReportIn,
+    ApprovedRemediationOut,
+    GenerateAck,
+    RemediationOut,
+    VerifyOut,
+)
 
 router = APIRouter(tags=["remediation"])
 
@@ -38,6 +45,7 @@ def _to_out(row: RemediationRow) -> RemediationOut:
         static_notes=row.static_notes,
         verified=row.verified,
         verify_notes=row.verify_notes,
+        apply_status=row.apply_status,
     )
 
 
@@ -149,3 +157,49 @@ def reject_remediation(remediation_id: int, session: SessionDep, actor: Actor) -
     session.commit()
     session.refresh(row)
     return _to_out(row)
+
+
+@router.post("/assets/{asset_id}/remediations/pull", response_model=list[ApprovedRemediationOut])
+async def pull_approved(
+    asset_id: int, request: Request, session: SessionDep
+) -> list[ApprovedRemediationOut]:
+    """에이전트가 승인·미적용 조치를 가져간다(서명 인증; 운영자 토큰 면제)."""
+    asset = get_or_404(session, asset_id)
+    await read_signed_body(asset, request)  # 빈 바디 서명 검증
+    rows = session.scalars(
+        select(RemediationRow)
+        .where(
+            RemediationRow.asset_id == asset_id,
+            RemediationRow.status == "approved",
+            RemediationRow.apply_status == "",
+        )
+        .order_by(RemediationRow.id)
+    ).all()
+    return [
+        ApprovedRemediationOut(
+            id=r.id, check_id=r.check_id, title=r.title, script=r.script, rollback=r.rollback
+        )
+        for r in rows
+    ]
+
+
+@router.post("/assets/{asset_id}/remediations/report", response_model=ApplyReportAck)
+async def report_apply(asset_id: int, request: Request, session: SessionDep) -> ApplyReportAck:
+    """에이전트가 조치 적용 결과를 보고한다(서명 인증)."""
+    asset = get_or_404(session, asset_id)
+    raw = await read_signed_body(asset, request)
+    payload = ApplyReportIn.model_validate_json(raw)
+
+    updated = 0
+    for result in payload.results:
+        row = session.get(RemediationRow, result.id)
+        if row is None or row.asset_id != asset_id:
+            continue
+        row.apply_status = result.status
+        row.apply_output = result.output[:255]
+        record_audit(
+            session, "agent", "remediation.apply", f"rid={result.id} status={result.status}"
+        )
+        updated += 1
+    session.commit()
+    return ApplyReportAck(updated=updated)
