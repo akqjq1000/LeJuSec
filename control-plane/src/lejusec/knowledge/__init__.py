@@ -26,6 +26,9 @@ class CheckItem(BaseModel):
     rule_type: str  # "config" | "vuln_absent"
     match: str | None = None
     min_severity: Severity | None = None
+    # 조치안 템플릿(있을 때). 자동 조치가 어려우면 비워 두고 수동 조치로 처리한다.
+    fix: str = ""
+    rollback: str = ""
 
 
 @lru_cache

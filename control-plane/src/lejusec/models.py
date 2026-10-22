@@ -65,3 +65,24 @@ class ScanResultRow(Base):
     created_at: Mapped[dt.datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
+
+
+class RemediationRow(Base):
+    """조치안 1건과 HITL 상태. status: proposed | approved | rejected."""
+
+    __tablename__ = "remediations"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    asset_id: Mapped[int] = mapped_column(ForeignKey("assets.id", ondelete="CASCADE"), index=True)
+    check_id: Mapped[str] = mapped_column(String(64))
+    title: Mapped[str] = mapped_column(String(255))
+    script: Mapped[str] = mapped_column(Text)
+    rollback: Mapped[str] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(String(16), default="proposed")
+    static_ok: Mapped[bool] = mapped_column(Boolean, default=False)
+    static_notes: Mapped[str] = mapped_column(String(255), default="")
+    verified: Mapped[bool] = mapped_column(Boolean, default=False)
+    verify_notes: Mapped[str] = mapped_column(String(255), default="")
+    created_at: Mapped[dt.datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )

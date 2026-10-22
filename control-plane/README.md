@@ -50,6 +50,10 @@ CA/서버/클라이언트 개인키(`*.key`)는 `.gitignore`로 커밋되지 않
 | GET | `/assets/{id}/results` | 최근 점검 판정 결과 |
 | GET | `/checks` | 점검 기준 목록 |
 | GET | `/checks/search?q=` | RAG 근거 검색 |
+| POST | `/assets/{id}/remediations` | 불합격 항목 조치안 생성(정적 분석) |
+| GET | `/assets/{id}/remediations` | 조치안 목록 |
+| POST | `/remediations/{rid}/verify` | 샌드박스 드라이런 검증 |
+| POST | `/remediations/{rid}/approve`·`/reject` | HITL 승인/거부 (unsafe는 승인 불가) |
 | DELETE | `/assets/{id}` | 등록 삭제 |
 
 ## 구조

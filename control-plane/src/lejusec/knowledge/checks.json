@@ -7,7 +7,9 @@
     "rationale": "root 계정의 직접 원격 접속을 허용하면 무차별 대입 공격의 표적이 되고 책임 추적성이 약화된다. sshd_config의 PermitRootLogin을 no로 설정하고 일반 계정으로 접속 후 권한 상승을 사용한다.",
     "tool": "openscap",
     "rule_type": "config",
-    "match": "rule_sshd_disable_root_login"
+    "match": "rule_sshd_disable_root_login",
+    "fix": "cp -n /etc/ssh/sshd_config /etc/ssh/sshd_config.lejubak && sed -i 's/^#\\?PermitRootLogin.*/PermitRootLogin no/' /etc/ssh/sshd_config && sshd -t && systemctl reload sshd",
+    "rollback": "cp /etc/ssh/sshd_config.lejubak /etc/ssh/sshd_config && systemctl reload sshd"
   },
   {
     "id": "U-02",
@@ -17,7 +19,9 @@
     "rationale": "패스워드 저장에 취약한 해시(MD5, DES)를 사용하면 유출 시 평문 복원 위험이 크다. SHA-512 등 강한 해시 알고리즘을 사용하도록 설정한다.",
     "tool": "openscap",
     "rule_type": "config",
-    "match": "rule_set_password_hashing"
+    "match": "rule_set_password_hashing",
+    "fix": "cp -n /etc/login.defs /etc/login.defs.lejubak && sed -i 's/^#\\?ENCRYPT_METHOD.*/ENCRYPT_METHOD SHA512/' /etc/login.defs",
+    "rollback": "cp /etc/login.defs.lejubak /etc/login.defs"
   },
   {
     "id": "U-03",
@@ -27,7 +31,9 @@
     "rationale": "SSH 프로토콜 버전, 암호화 스위트, 접속 제어 설정이 약하면 중간자 공격과 불법 접속에 노출된다. 안전한 설정 기준에 맞춰 sshd를 강화한다.",
     "tool": "lynis",
     "rule_type": "config",
-    "match": "SSH-7408"
+    "match": "SSH-7408",
+    "fix": "cp -n /etc/ssh/sshd_config /etc/ssh/sshd_config.lejubak && sed -i 's/^#\\?Protocol.*/Protocol 2/' /etc/ssh/sshd_config && sshd -t && systemctl reload sshd",
+    "rollback": "cp /etc/ssh/sshd_config.lejubak /etc/ssh/sshd_config && systemctl reload sshd"
   },
   {
     "id": "U-04",
@@ -37,7 +43,9 @@
     "rationale": "패스워드 만료(aging) 정책이 없으면 유출된 자격증명이 장기간 악용될 수 있다. 최대 사용 기간과 변경 주기를 설정한다.",
     "tool": "lynis",
     "rule_type": "config",
-    "match": "AUTH-9286"
+    "match": "AUTH-9286",
+    "fix": "cp -n /etc/login.defs /etc/login.defs.lejubak && sed -i 's/^PASS_MAX_DAYS.*/PASS_MAX_DAYS 90/' /etc/login.defs",
+    "rollback": "cp /etc/login.defs.lejubak /etc/login.defs"
   },
   {
     "id": "V-01",
