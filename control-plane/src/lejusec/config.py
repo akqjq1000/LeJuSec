@@ -3,15 +3,30 @@
 비밀값은 .env/시크릿 매니저에서만 주입하며 기본값은 로컬 개발용이다.
 """
 
+from pathlib import Path
+
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+def _default_sqlite_url() -> str:
+    """CWD와 무관한 고정 SQLite 경로.
+
+    과거 기본값 `sqlite:///./lejusec-dev.db`는 실행 시점의 작업 디렉터리에 상대적이라,
+    저장소 루트에서 띄웠을 때와 control-plane/에서 띄웠을 때 서로 다른(빈) DB가 열려
+    "등록 자산이 사라진 것처럼" 보이는 문제가 있었다. 패키지 기준 절대 경로로 고정한다.
+    """
+    # config.py: control-plane/src/lejusec/config.py → parents[2] == control-plane/
+    root = Path(__file__).resolve().parents[2]
+    return f"sqlite:///{(root / 'lejusec-dev.db').as_posix()}"
 
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="LEJUSEC_", env_file=".env", extra="ignore")
 
-    # 기본값은 바로 실행 가능한 로컬 SQLite. 운영/compose에서는
+    # 기본값은 바로 실행 가능한 로컬 SQLite(패키지 기준 고정 경로, CWD 무관). 운영/compose에서는
     # LEJUSEC_DATABASE_URL 로 PostgreSQL(postgresql+psycopg://...)을 주입한다.
-    database_url: str = "sqlite:///./lejusec-dev.db"
+    database_url: str = Field(default_factory=_default_sqlite_url)
     vector_db_url: str = "http://localhost:6333"
     log_level: str = "INFO"
 

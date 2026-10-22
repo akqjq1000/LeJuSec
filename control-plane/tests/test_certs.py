@@ -38,3 +38,17 @@ def test_server_cert_is_not_ca(tmp_path: Path) -> None:
     server = _load(tmp_path / "server.crt")
     bc = server.extensions.get_extension_for_class(x509.BasicConstraints).value
     assert bc.ca is False
+
+
+def test_subject_and_authority_key_identifiers(tmp_path: Path) -> None:
+    """SKI/AKI 확장 존재 + leaf의 AKI가 CA의 SKI를 가리키는지(엄격 검증 필수)."""
+    generate_dev_certs(tmp_path)
+    ca = _load(tmp_path / "ca.crt")
+    ca_ski = ca.extensions.get_extension_for_class(x509.SubjectKeyIdentifier).value
+
+    for name in ("server.crt", "client.crt"):
+        leaf = _load(tmp_path / name)
+        leaf_ski = leaf.extensions.get_extension_for_class(x509.SubjectKeyIdentifier).value
+        leaf_aki = leaf.extensions.get_extension_for_class(x509.AuthorityKeyIdentifier).value
+        assert leaf_ski.digest, f"{name}: missing SKI"
+        assert leaf_aki.key_identifier == ca_ski.digest, f"{name}: AKI != CA SKI"

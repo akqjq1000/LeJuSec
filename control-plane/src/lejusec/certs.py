@@ -75,17 +75,22 @@ def generate_dev_certs(
     not_after = now + dt.timedelta(days=days)
 
     ca_key = _new_key()
+    ca_pub = ca_key.public_key()
+    ca_ski = x509.SubjectKeyIdentifier.from_public_key(ca_pub)
     ca_name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, "LeJuSec Dev CA")])
     ca_cert = (
         x509.CertificateBuilder()
         .subject_name(ca_name)
         .issuer_name(ca_name)
-        .public_key(ca_key.public_key())
+        .public_key(ca_pub)
         .serial_number(x509.random_serial_number())
         .not_valid_before(now)
         .not_valid_after(not_after)
         .add_extension(x509.BasicConstraints(ca=True, path_length=0), critical=True)
         .add_extension(_key_usage(cert_sign=True), critical=True)
+        # SKI/AKI: RFC 5280 준수 — 엄격 검증(예: Python 3.14 OpenSSL)이 요구.
+        .add_extension(ca_ski, critical=False)
+        .add_extension(x509.AuthorityKeyIdentifier.from_issuer_public_key(ca_pub), critical=False)
         .sign(ca_key, hashes.SHA256())
     )
 
@@ -106,6 +111,13 @@ def generate_dev_certs(
             .add_extension(x509.BasicConstraints(ca=False, path_length=None), critical=True)
             .add_extension(_key_usage(cert_sign=False), critical=True)
             .add_extension(x509.ExtendedKeyUsage([eku]), critical=False)
+            # SKI(자기 공개키) + AKI(발급 CA 공개키) — 엄격 검증 체인 구성에 필요.
+            .add_extension(
+                x509.SubjectKeyIdentifier.from_public_key(key.public_key()), critical=False
+            )
+            .add_extension(
+                x509.AuthorityKeyIdentifier.from_issuer_public_key(ca_pub), critical=False
+            )
         )
         if san is not None:
             builder = builder.add_extension(san, critical=False)
