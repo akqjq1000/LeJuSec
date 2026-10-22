@@ -91,3 +91,27 @@ class CheckItemOut(BaseModel):
 class CheckSearchHit(BaseModel):
     item: CheckItemOut
     score: float
+
+
+class RemediationOut(BaseModel):
+    id: int
+    check_id: str
+    title: str
+    script: str
+    rollback: str
+    status: str
+    static_ok: bool
+    static_notes: str
+    verified: bool
+    verify_notes: str
+
+
+class GenerateAck(BaseModel):
+    generated: int
+    proposed: list[RemediationOut]
+
+
+class VerifyOut(BaseModel):
+    ok: bool
+    notes: str
+    sandbox: str
