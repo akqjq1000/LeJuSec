@@ -2,10 +2,12 @@
 //
 // Phase 1: collects a host inventory (packages, processes). Without --server it
 // prints the inventory as JSON; with --server it signs and sends it to the
-// control plane. --keygen creates an Ed25519 keypair for registration.
+// control plane, optionally over mutual TLS. --keygen creates an Ed25519
+// keypair for registration.
 package main
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -23,8 +25,11 @@ func main() {
 	showVersion := flag.Bool("version", false, "print version and exit")
 	keygen := flag.String("keygen", "", "generate an Ed25519 keypair, write the private key to this path, print the public key")
 	keyPath := flag.String("key", "", "path to the Ed25519 private key (used with --server)")
-	server := flag.String("server", "", "control-plane base URL to send inventory to (e.g. http://host:8000)")
+	server := flag.String("server", "", "control-plane base URL to send inventory to (e.g. https://host:8000)")
 	assetID := flag.Int("asset-id", 0, "asset id to report inventory for (used with --server)")
+	caCert := flag.String("ca-cert", "", "CA certificate to verify the control plane (enables mTLS)")
+	clientCert := flag.String("client-cert", "", "client certificate for mTLS")
+	clientKey := flag.String("client-key", "", "client private key for mTLS")
 	flag.Parse()
 
 	switch {
@@ -55,10 +60,32 @@ func main() {
 	if err != nil {
 		fail(err)
 	}
-	if err := client.SendInventory(*server, *assetID, priv, inv); err != nil {
+
+	tlsConf, err := buildTLS(*caCert, *clientCert, *clientKey)
+	if err != nil {
+		fail(err)
+	}
+
+	if err := client.New(*server, tlsConf).SendInventory(*assetID, priv, inv); err != nil {
 		fail(err)
 	}
 	fmt.Printf("sent inventory: %d packages, %d processes\n", len(inv.Packages), len(inv.Processes))
+}
+
+// buildTLS returns a mutual-TLS config when the three cert flags are set, nil
+// when none are set, or an error when they are set inconsistently.
+func buildTLS(caCert, clientCert, clientKey string) (*tls.Config, error) {
+	if caCert == "" && clientCert == "" && clientKey == "" {
+		return nil, nil
+	}
+	if caCert == "" || clientCert == "" || clientKey == "" {
+		return nil, fmt.Errorf("--ca-cert, --client-cert and --client-key must be set together")
+	}
+	return client.BuildTLSConfig(client.TLSPaths{
+		ClientCert: clientCert,
+		ClientKey:  clientKey,
+		CACert:     caCert,
+	})
 }
 
 func doKeygen(path string) error {

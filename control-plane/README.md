@@ -19,6 +19,23 @@ ruff check . && ruff format --check . && mypy src tests
 pytest -q
 ```
 
+## 실행 / mTLS
+
+```bash
+# 평문 HTTP (개발)
+python -m lejusec.server
+
+# 상호 TLS: 개발용 인증서 생성 후 mTLS로 기동
+python scripts/gen_certs.py --out ../certs --server-san DNS:localhost --server-san IP:127.0.0.1
+LEJUSEC_TLS_CERTFILE=../certs/server.crt \
+LEJUSEC_TLS_KEYFILE=../certs/server.key \
+LEJUSEC_TLS_CA_CERTS=../certs/ca.crt \
+python -m lejusec.server     # 클라이언트 인증서를 요구(CERT_REQUIRED)
+```
+
+CA/서버/클라이언트 개인키(`*.key`)는 `.gitignore`로 커밋되지 않는다. 운영에서는
+사내 PKI/ACME로 대체한다.
+
 ## API (현재)
 
 | 메서드 | 경로 | 설명 |
