@@ -160,6 +160,8 @@ function Integrity({ id }: { id: number }) {
 function Remediations({ id }: { id: number }) {
   const qc = useQueryClient()
   const q = useQuery({ queryKey: ['remediations', id], queryFn: () => api.remediations(id) })
+  const me = useQuery({ queryKey: ['me'], queryFn: api.me, retry: false })
+  const canWrite = me.data?.role === 'admin'
   const [expanded, setExpanded] = useState<number | null>(null)
 
   const invalidate = () => {
@@ -190,9 +192,10 @@ function Remediations({ id }: { id: number }) {
   return (
     <div>
       <div className="toolbar">
-        <button onClick={() => genM.mutate()} disabled={busy}>
+        <button onClick={() => genM.mutate()} disabled={busy || !canWrite}>
           불합격 항목 조치안 생성
         </button>
+        {!canWrite ? <span className="muted">읽기 전용 역할 — 조치 변경 권한 없음</span> : null}
         {actionError ? <span className="error">{actionError.message}</span> : null}
       </div>
 
@@ -217,6 +220,7 @@ function Remediations({ id }: { id: number }) {
                 key={r.id}
                 r={r}
                 busy={busy}
+                canWrite={canWrite}
                 expanded={expanded === r.id}
                 onToggle={() => setExpanded(expanded === r.id ? null : r.id)}
                 onVerify={() => verifyM.mutate(r.id)}
@@ -234,6 +238,7 @@ function Remediations({ id }: { id: number }) {
 interface RowProps {
   r: Remediation
   busy: boolean
+  canWrite: boolean
   expanded: boolean
   onToggle: () => void
   onVerify: () => void
@@ -241,7 +246,16 @@ interface RowProps {
   onReject: () => void
 }
 
-function RemediationRow({ r, busy, expanded, onToggle, onVerify, onApprove, onReject }: RowProps) {
+function RemediationRow({
+  r,
+  busy,
+  canWrite,
+  expanded,
+  onToggle,
+  onVerify,
+  onApprove,
+  onReject,
+}: RowProps) {
   const isProposed = r.status === 'proposed'
   return (
     <>
@@ -273,13 +287,13 @@ function RemediationRow({ r, busy, expanded, onToggle, onVerify, onApprove, onRe
               <div className="code-label">롤백</div>
               <pre>{r.rollback || '(없음)'}</pre>
               <div className="actions">
-                <button onClick={onVerify} disabled={busy}>
+                <button onClick={onVerify} disabled={busy || !canWrite}>
                   샌드박스 검증
                 </button>
-                <button onClick={onApprove} disabled={busy || !isProposed || !r.static_ok}>
+                <button onClick={onApprove} disabled={busy || !canWrite || !isProposed || !r.static_ok}>
                   승인
                 </button>
-                <button onClick={onReject} disabled={busy || !isProposed}>
+                <button onClick={onReject} disabled={busy || !canWrite || !isProposed}>
                   거부
                 </button>
               </div>

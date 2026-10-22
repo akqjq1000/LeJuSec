@@ -56,7 +56,15 @@ CA/서버/클라이언트 개인키(`*.key`)는 `.gitignore`로 커밋되지 않
 | POST | `/remediations/{rid}/approve`·`/reject` | HITL 승인/거부 (unsafe는 승인 불가) |
 | POST | `/assets/{id}/integrity` | 서명된 무결성 매니페스트 수신(베이스라인/변경 탐지) |
 | GET | `/assets/{id}/integrity/events`·`/baseline` | 무결성 이벤트/베이스라인 조회 |
+| GET | `/me` | 현재 운영자 역할 |
 | DELETE | `/assets/{id}` | 등록 삭제 |
+
+### 운영자 인증(RBAC)
+
+`LEJUSEC_OPERATOR_TOKENS`(예: `admintok:admin,viewtok:viewer`)를 설정하면 운영자
+엔드포인트가 베어러 토큰으로 보호된다. `admin`은 쓰기, `viewer`는 읽기 전용이며,
+에이전트 서명 엔드포인트(인벤토리/스캔/무결성 수신)는 서명으로 인증되어 면제된다.
+비우면 인증 비활성(개발). 쓰기 성공은 `lejusec.audit` 로거로 감사 기록된다.
 
 ## 구조
 

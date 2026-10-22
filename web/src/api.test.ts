@@ -1,9 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { api } from './api'
+import { api, setToken } from './api'
 
 afterEach(() => {
   vi.restoreAllMocks()
+  setToken('')
 })
 
 describe('api client', () => {
@@ -15,7 +16,7 @@ describe('api client', () => {
     )
     const result = await api.summary()
     expect(result.assets_total).toBe(2)
-    expect(fetch).toHaveBeenCalledWith(expect.stringContaining('/summary'))
+    expect(fetch).toHaveBeenCalledWith(expect.stringContaining('/summary'), expect.anything())
   })
 
   it('throws on non-ok response', async () => {
@@ -43,7 +44,23 @@ describe('api client', () => {
     const fetchMock = vi.fn(async () => ({ ok: true, json: async () => [] }) as unknown as Response)
     vi.stubGlobal('fetch', fetchMock)
     await api.checksSearch('root SSH 접속')
-    expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('/checks/search?q=root%20SSH'))
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('/checks/search?q=root%20SSH'),
+      expect.anything(),
+    )
+  })
+
+  it('sends Authorization header when a token is set', async () => {
+    setToken('tok123')
+    const fetchMock = vi.fn(
+      async () => ({ ok: true, json: async () => ({ role: 'admin', auth: 'enabled' }) }) as unknown as Response,
+    )
+    vi.stubGlobal('fetch', fetchMock)
+    await api.me()
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('/me'),
+      expect.objectContaining({ headers: { Authorization: 'Bearer tok123' } }),
+    )
   })
 
   it('surfaces 409 detail on unsafe approve', async () => {

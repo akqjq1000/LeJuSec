@@ -28,9 +28,22 @@ class Settings(BaseSettings):
     # GUI(운영자 콘솔)용 CORS 허용 출처. 기본값은 Vite 개발 서버.
     cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
 
+    # 운영자 토큰(RBAC). "token:role,token:role" 형식. 비우면 인증 비활성(개발).
+    # role은 admin(쓰기 허용) 또는 viewer(읽기 전용).
+    operator_tokens: str = ""
+
     @property
     def cors_origin_list(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
+
+    @property
+    def operator_token_map(self) -> dict[str, str]:
+        result: dict[str, str] = {}
+        for pair in self.operator_tokens.split(","):
+            token, _, role = pair.strip().partition(":")
+            if token:
+                result[token] = role.strip() or "viewer"
+        return result
 
 
 settings = Settings()

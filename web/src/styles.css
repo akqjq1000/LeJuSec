@@ -31,8 +31,8 @@ a:hover { text-decoration: underline; }
   background: var(--panel); border-bottom: 1px solid var(--border); }
 .brand { font-weight: 700; letter-spacing: 0.5px; }
 .topbar nav { display: flex; gap: 16px; }
-.ro-badge { margin-left: auto; font-size: 12px; color: var(--muted);
-  border: 1px solid var(--border); padding: 2px 8px; border-radius: 999px; }
+.auth { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.input.sm { min-width: 150px; padding: 4px 8px; font-size: 13px; }
 
 .content { max-width: 1000px; margin: 0 auto; padding: 24px 16px; }
 h1 { font-size: 20px; margin: 0 0 16px; }
