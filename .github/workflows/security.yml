@@ -21,7 +21,7 @@ jobs:
     name: Secret scan (gitleaks)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0   # 히스토리 전체 스캔
       - uses: gitleaks/gitleaks-action@v2
@@ -32,7 +32,7 @@ jobs:
     name: Dependency / FS scan (Trivy)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Trivy filesystem scan
         uses: aquasecurity/trivy-action@0.35.0
         with:
@@ -55,7 +55,7 @@ jobs:
       matrix:
         language: [go, python]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Detect language sources
         id: detect

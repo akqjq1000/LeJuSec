@@ -18,7 +18,7 @@ jobs:
     name: Agent (Go)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Check for agent sources
         id: check
@@ -55,7 +55,7 @@ jobs:
     name: Control Plane (Python)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Check for control-plane sources
         id: check
@@ -94,7 +94,7 @@ jobs:
     name: Docs
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Markdown link check
         uses: gaurav-nelson/github-action-markdown-link-check@v1
         with:
@@ -105,7 +105,7 @@ jobs:
     name: Web (GUI)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Check for web project
         id: check
