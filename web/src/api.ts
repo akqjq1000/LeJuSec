@@ -1,7 +1,34 @@
 export const API_BASE: string = import.meta.env.VITE_API_BASE ?? 'http://localhost:8000'
 
+const TOKEN_KEY = 'lejusec_token'
+
+export function getToken(): string {
+  try {
+    return localStorage.getItem(TOKEN_KEY) ?? ''
+  } catch {
+    return ''
+  }
+}
+
+export function setToken(token: string): void {
+  try {
+    if (token) {
+      localStorage.setItem(TOKEN_KEY, token)
+    } else {
+      localStorage.removeItem(TOKEN_KEY)
+    }
+  } catch {
+    /* localStorage 불가 시 무시 */
+  }
+}
+
+function authHeaders(): Record<string, string> {
+  const token = getToken()
+  return token ? { Authorization: `Bearer ${token}` } : {}
+}
+
 async function get<T>(path: string): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`)
+  const res = await fetch(`${API_BASE}${path}`, { headers: authHeaders() })
   if (!res.ok) {
     throw new Error(`${res.status} ${res.statusText}`)
   }
@@ -9,7 +36,7 @@ async function get<T>(path: string): Promise<T> {
 }
 
 async function post<T>(path: string): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, { method: 'POST' })
+  const res = await fetch(`${API_BASE}${path}`, { method: 'POST', headers: authHeaders() })
   if (!res.ok) {
     const detail = await res.text().catch(() => '')
     throw new Error(`${res.status} ${res.statusText}${detail ? `: ${detail}` : ''}`)
@@ -101,7 +128,13 @@ export interface VerifyResult {
   sandbox: string
 }
 
+export interface Me {
+  role: string
+  auth: string
+}
+
 export const api = {
+  me: () => get<Me>('/me'),
   summary: () => get<Summary>('/summary'),
   assets: () => get<Asset[]>('/assets'),
   asset: (id: number) => get<Asset>(`/assets/${id}`),

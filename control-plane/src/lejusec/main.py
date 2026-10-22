@@ -13,9 +13,11 @@ from lejusec import __version__
 from lejusec.api.assets import router as assets_router
 from lejusec.api.checks import router as checks_router
 from lejusec.api.integrity import router as integrity_router
+from lejusec.api.operator import router as operator_router
 from lejusec.api.remediations import router as remediations_router
 from lejusec.api.scans import router as scans_router
 from lejusec.api.summary import router as summary_router
+from lejusec.auth import OperatorAuthMiddleware
 from lejusec.config import settings
 from lejusec.db import init_db
 
@@ -28,6 +30,9 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
 
 app = FastAPI(title="LeJuSec Control Plane", version=__version__, lifespan=lifespan)
 
+# 미들웨어는 나중에 추가한 것이 바깥쪽. CORS를 바깥에 두어 인증 실패(401/403)
+# 응답에도 CORS 헤더가 붙도록 인증 미들웨어를 먼저 추가한다.
+app.add_middleware(OperatorAuthMiddleware)
 if settings.cors_origin_list:
     app.add_middleware(
         CORSMiddleware,
@@ -42,6 +47,7 @@ app.include_router(checks_router)
 app.include_router(remediations_router)
 app.include_router(integrity_router)
 app.include_router(summary_router)
+app.include_router(operator_router)
 
 
 @app.get("/healthz")

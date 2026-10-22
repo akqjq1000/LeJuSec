@@ -32,4 +32,8 @@ npm run build
 
 - **점검 기준(G3)**: 기준 목록 + RAG 근거 검색(`/checks/search`)
 
-인증/RBAC, 무결성 실시간 알림은 G4 이후에 추가한다.
+- **운영자 인증(G4)**: 상단바 토큰 입력(localStorage 저장) → `Authorization: Bearer`
+  전송. 역할(admin/viewer)이 표시되며, viewer는 조치 변경 버튼이 비활성화된다.
+  (백엔드가 `LEJUSEC_OPERATOR_TOKENS` 미설정이면 인증 비활성 → admin으로 동작.)
+
+무결성 실시간 알림(SSE)·다크모드·i18n은 추후 추가한다.
