@@ -39,6 +39,13 @@ describe('api client', () => {
     )
   })
 
+  it('checksSearch encodes the query', async () => {
+    const fetchMock = vi.fn(async () => ({ ok: true, json: async () => [] }) as unknown as Response)
+    vi.stubGlobal('fetch', fetchMock)
+    await api.checksSearch('root SSH 접속')
+    expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('/checks/search?q=root%20SSH'))
+  })
+
   it('surfaces 409 detail on unsafe approve', async () => {
     vi.stubGlobal(
       'fetch',
