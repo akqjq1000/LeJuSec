@@ -46,6 +46,10 @@ CA/서버/클라이언트 개인키(`*.key`)는 `.gitignore`로 커밋되지 않
 | POST | `/assets/{id}/manage`·`/unmanage` | 관리 지정/해제 |
 | PUT | `/assets/{id}/key` | 에이전트 Ed25519 공개키 등록 |
 | POST | `/assets/{id}/inventory` | 서명된 인벤토리 수신 (X-Signature 검증) |
+| POST | `/assets/{id}/scan` | 서명된 스캐너 finding 수신 → 룰 엔진 판정·저장 |
+| GET | `/assets/{id}/results` | 최근 점검 판정 결과 |
+| GET | `/checks` | 점검 기준 목록 |
+| GET | `/checks/search?q=` | RAG 근거 검색 |
 | DELETE | `/assets/{id}` | 등록 삭제 |
 
 ## 구조

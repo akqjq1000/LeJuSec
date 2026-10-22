@@ -10,6 +10,8 @@ from fastapi import FastAPI
 
 from lejusec import __version__
 from lejusec.api.assets import router as assets_router
+from lejusec.api.checks import router as checks_router
+from lejusec.api.scans import router as scans_router
 from lejusec.db import init_db
 
 
@@ -21,6 +23,8 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
 
 app = FastAPI(title="LeJuSec Control Plane", version=__version__, lifespan=lifespan)
 app.include_router(assets_router)
+app.include_router(scans_router)
+app.include_router(checks_router)
 
 
 @app.get("/healthz")

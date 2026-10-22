@@ -4,6 +4,8 @@ import datetime as dt
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from lejusec.scanners import Finding
+
 
 class AssetCreate(BaseModel):
     hostname: str = Field(min_length=1, max_length=255)
@@ -54,3 +56,38 @@ class InventoryAck(BaseModel):
     package_count: int
     process_count: int
     captured_at: dt.datetime
+
+
+class ScanIn(BaseModel):
+    findings: list[Finding] = Field(default_factory=list)
+
+
+class ScanAck(BaseModel):
+    scan_id: str
+    total: int
+    passed: int
+    failed: int
+    na: int
+
+
+class CheckResultOut(BaseModel):
+    check_id: str
+    standard: str
+    title: str
+    severity: str
+    status: str
+    reason: str
+    evidence: list[str]
+
+
+class CheckItemOut(BaseModel):
+    id: str
+    standard: str
+    title: str
+    severity: str
+    rationale: str
+
+
+class CheckSearchHit(BaseModel):
+    item: CheckItemOut
+    score: float

@@ -11,21 +11,14 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from lejusec.api.common import get_or_404, read_signed_body
 from lejusec.db import get_session
 from lejusec.models import Asset, InventorySnapshot
 from lejusec.schemas import AssetCreate, AssetRead, InventoryAck, InventoryIn, KeyIn
-from lejusec.signing import verify_ed25519
 
 router = APIRouter(prefix="/assets", tags=["assets"])
 
 SessionDep = Annotated[Session, Depends(get_session)]
-
-
-def _get_or_404(session: Session, asset_id: int) -> Asset:
-    asset = session.get(Asset, asset_id)
-    if asset is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="asset not found")
-    return asset
 
 
 @router.post("", response_model=AssetRead, status_code=status.HTTP_201_CREATED)
@@ -49,13 +42,13 @@ def list_assets(session: SessionDep) -> list[AssetRead]:
 
 @router.get("/{asset_id}", response_model=AssetRead)
 def get_asset(asset_id: int, session: SessionDep) -> AssetRead:
-    return AssetRead.model_validate(_get_or_404(session, asset_id))
+    return AssetRead.model_validate(get_or_404(session, asset_id))
 
 
 @router.post("/{asset_id}/manage", response_model=AssetRead)
 def manage_asset(asset_id: int, session: SessionDep) -> AssetRead:
     """관리 시스템으로 지정한다."""
-    asset = _get_or_404(session, asset_id)
+    asset = get_or_404(session, asset_id)
     asset.managed = True
     session.commit()
     session.refresh(asset)
@@ -65,7 +58,7 @@ def manage_asset(asset_id: int, session: SessionDep) -> AssetRead:
 @router.post("/{asset_id}/unmanage", response_model=AssetRead)
 def unmanage_asset(asset_id: int, session: SessionDep) -> AssetRead:
     """관리 시스템 지정을 해제한다."""
-    asset = _get_or_404(session, asset_id)
+    asset = get_or_404(session, asset_id)
     asset.managed = False
     session.commit()
     session.refresh(asset)
@@ -75,7 +68,7 @@ def unmanage_asset(asset_id: int, session: SessionDep) -> AssetRead:
 @router.put("/{asset_id}/key", response_model=AssetRead)
 def set_key(asset_id: int, payload: KeyIn, session: SessionDep) -> AssetRead:
     """에이전트 Ed25519 공개키를 등록/갱신한다."""
-    asset = _get_or_404(session, asset_id)
+    asset = get_or_404(session, asset_id)
     asset.public_key = payload.public_key
     session.commit()
     session.refresh(asset)
@@ -86,19 +79,9 @@ def set_key(asset_id: int, payload: KeyIn, session: SessionDep) -> AssetRead:
     "/{asset_id}/inventory", response_model=InventoryAck, status_code=status.HTTP_201_CREATED
 )
 async def ingest_inventory(asset_id: int, request: Request, session: SessionDep) -> InventoryAck:
-    """서명된 인벤토리를 수신한다.
-
-    X-Signature 헤더(base64 Ed25519)는 '전송 바디 원본 바이트'에 대한 서명이어야
-    하며, 등록된 공개키로 검증에 성공해야만 저장한다.
-    """
-    asset = _get_or_404(session, asset_id)
-    if not asset.public_key:
-        raise HTTPException(status.HTTP_409_CONFLICT, detail="no public key registered for asset")
-
-    signature = request.headers.get("X-Signature", "")
-    raw = await request.body()
-    if not signature or not verify_ed25519(asset.public_key, raw, signature):
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, detail="invalid or missing signature")
+    """서명된 인벤토리를 수신한다 (X-Signature를 전송 바디 바이트에 대해 검증)."""
+    asset = get_or_404(session, asset_id)
+    raw = await read_signed_body(asset, request)
 
     inv = InventoryIn.model_validate_json(raw)
     snapshot = InventorySnapshot(
@@ -123,6 +106,6 @@ async def ingest_inventory(asset_id: int, request: Request, session: SessionDep)
 @router.delete("/{asset_id}", status_code=status.HTTP_204_NO_CONTENT)
 def deregister_asset(asset_id: int, session: SessionDep) -> None:
     """자산 등록을 삭제한다."""
-    asset = _get_or_404(session, asset_id)
+    asset = get_or_404(session, asset_id)
     session.delete(asset)
     session.commit()

@@ -1,0 +1,52 @@
+[
+  {
+    "id": "U-01",
+    "standard": "KISA",
+    "title": "root 계정 원격 SSH 접속 제한",
+    "severity": "high",
+    "rationale": "root 계정의 직접 원격 접속을 허용하면 무차별 대입 공격의 표적이 되고 책임 추적성이 약화된다. sshd_config의 PermitRootLogin을 no로 설정하고 일반 계정으로 접속 후 권한 상승을 사용한다.",
+    "tool": "openscap",
+    "rule_type": "config",
+    "match": "rule_sshd_disable_root_login"
+  },
+  {
+    "id": "U-02",
+    "standard": "KISA",
+    "title": "안전한 패스워드 해시 알고리즘 사용",
+    "severity": "medium",
+    "rationale": "패스워드 저장에 취약한 해시(MD5, DES)를 사용하면 유출 시 평문 복원 위험이 크다. SHA-512 등 강한 해시 알고리즘을 사용하도록 설정한다.",
+    "tool": "openscap",
+    "rule_type": "config",
+    "match": "rule_set_password_hashing"
+  },
+  {
+    "id": "U-03",
+    "standard": "KISA",
+    "title": "SSH 데몬 설정 강화",
+    "severity": "medium",
+    "rationale": "SSH 프로토콜 버전, 암호화 스위트, 접속 제어 설정이 약하면 중간자 공격과 불법 접속에 노출된다. 안전한 설정 기준에 맞춰 sshd를 강화한다.",
+    "tool": "lynis",
+    "rule_type": "config",
+    "match": "SSH-7408"
+  },
+  {
+    "id": "U-04",
+    "standard": "KISA",
+    "title": "패스워드 최대 사용 기간 설정",
+    "severity": "low",
+    "rationale": "패스워드 만료(aging) 정책이 없으면 유출된 자격증명이 장기간 악용될 수 있다. 최대 사용 기간과 변경 주기를 설정한다.",
+    "tool": "lynis",
+    "rule_type": "config",
+    "match": "AUTH-9286"
+  },
+  {
+    "id": "V-01",
+    "standard": "CIS",
+    "title": "HIGH 이상 알려진 취약점(CVE) 부재",
+    "severity": "high",
+    "rationale": "설치된 패키지에 HIGH/CRITICAL 등급의 알려진 취약점(CVE)이 존재하면 원격 코드 실행 등 심각한 위협으로 이어질 수 있다. 패치 적용 또는 버전 업그레이드가 필요하다.",
+    "tool": "trivy",
+    "rule_type": "vuln_absent",
+    "min_severity": "high"
+  }
+]
