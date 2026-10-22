@@ -68,27 +68,84 @@ LeJuSec/
 └─ LICENSE
 ```
 
-> 참고: `agent/`, `control-plane/`는 현재 설계 단계이며, 코드는
-> [로드맵](docs/roadmap.md)의 MVP 순서에 따라 추가됩니다.
+## 사전 요구사항
 
-## 빠른 시작
-
-### 사전 요구사항
-
+- Python 3.12+ (컨트롤 플레인), uv 또는 pip
 - Go 1.22+ (에이전트)
-- Python 3.12+ (컨트롤 플레인)
-- Docker / Podman (샌드박스, 로컬 의존 서비스)
-- PostgreSQL 16+, 벡터 DB(pgvector 또는 Qdrant)
+- Node 20+ (웹 콘솔)
+- (선택) Docker/Podman — 로컬 의존 서비스(Postgres/pgvector, Qdrant)
 
-### 개발 환경 구성
+> 기본 DB는 외부 의존 없이 바로 뜨도록 SQLite를 쓴다. PostgreSQL은
+> `LEJUSEC_DATABASE_URL`(`postgresql+psycopg://...`)로 주입한다.
+
+## 시스템 구동 방법
+
+### 1. 컨트롤 플레인 (API)
 
 ```bash
-git clone https://github.com/akqjq1000/LeJuSec.git
-cd LeJuSec
-# 상세 절차는 docs/development/getting-started.md 참고
+cd control-plane
+uv venv && source .venv/bin/activate      # Windows: .venv\Scripts\activate
+uv pip install -e ".[dev]"
+python -m lejusec.server                   # http://127.0.0.1:8000  (/healthz)
 ```
 
-전체 절차는 [docs/development/getting-started.md](docs/development/getting-started.md)를 따르세요.
+### 2. 웹 콘솔 (운영자 GUI)
+
+```bash
+cd web
+npm install
+npm run dev                                # http://localhost:5173
+```
+
+컨트롤 플레인은 CORS에서 `http://localhost:5173`을 기본 허용한다.
+
+### 3. 에이전트 (대상 시스템)
+
+```bash
+cd agent
+go build -o lejusec-agent ./cmd/agent
+
+# (1) 키 생성 → 출력된 공개키를 등록에 사용
+./lejusec-agent --keygen agent.key
+
+# (2) 자산 등록 + 공개키 등록 (운영자/API)
+curl -X POST http://127.0.0.1:8000/assets \
+  -H 'Content-Type: application/json' -d '{"hostname":"host-01","os":"ubuntu"}'
+curl -X PUT http://127.0.0.1:8000/assets/1/key \
+  -H 'Content-Type: application/json' -d '{"public_key":"<공개키>"}'
+
+# (3) 서명 전송 — 인벤토리 / 점검 / 무결성
+./lejusec-agent --server http://127.0.0.1:8000 --asset-id 1 --key agent.key
+./lejusec-agent --scan --server http://127.0.0.1:8000 --asset-id 1 --key agent.key \
+  --lynis-report /var/log/lynis-report.dat --oscap-results results.xml
+./lejusec-agent --fim  --server http://127.0.0.1:8000 --asset-id 1 --key agent.key
+```
+
+### 4. mTLS로 구동 (권장)
+
+```bash
+# 개발용 인증서 생성 (CA / 서버 / 클라이언트)
+cd control-plane && python scripts/gen_certs.py --out ../certs \
+  --server-san DNS:localhost --server-san IP:127.0.0.1
+
+# 컨트롤 플레인 (상호 TLS)
+LEJUSEC_TLS_CERTFILE=../certs/server.crt LEJUSEC_TLS_KEYFILE=../certs/server.key \
+LEJUSEC_TLS_CA_CERTS=../certs/ca.crt python -m lejusec.server
+
+# 에이전트 (클라이언트 인증서)
+./lejusec-agent --server https://localhost:8000 --asset-id 1 --key agent.key \
+  --ca-cert certs/ca.crt --client-cert certs/client.crt --client-key certs/client.key
+```
+
+### 5. (선택) 의존 서비스 · 단축 명령
+
+```bash
+docker compose -f deploy/compose.dev.yml up -d   # Postgres/pgvector, Qdrant
+make help                                        # cp-run / cp-run-tls / certs / up / down
+```
+
+전체 운영 흐름: **자산 등록 → 에이전트 수집·점검 → 룰 엔진 판정 → 조치 생성·검증·승인(HITL) → 무결성 모니터링**. 운영자 콘솔(웹)에서 한눈에 확인·승인한다.
+상세 개발 절차는 [docs/development/getting-started.md](docs/development/getting-started.md) 참고.
 
 ## 문서
 
