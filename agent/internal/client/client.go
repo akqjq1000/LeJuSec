@@ -1,5 +1,5 @@
-// Package client sends signed inventory to the control plane, optionally over
-// mutual TLS.
+// Package client sends signed inventory and scan findings to the control
+// plane, optionally over mutual TLS.
 package client
 
 import (
@@ -13,10 +13,11 @@ import (
 	"time"
 
 	"github.com/akqjq1000/LeJuSec/agent/internal/collector"
+	"github.com/akqjq1000/LeJuSec/agent/internal/scan"
 	"github.com/akqjq1000/LeJuSec/agent/internal/signing"
 )
 
-// Client posts inventory to a control-plane base URL.
+// Client posts signed payloads to a control-plane base URL.
 type Client struct {
 	baseURL string
 	http    *http.Client
@@ -35,16 +36,28 @@ func New(baseURL string, tlsConf *tls.Config) *Client {
 	}
 }
 
-// SendInventory marshals the inventory, signs the exact JSON bytes, and POSTs
-// them with the signature in the X-Signature header.
+// SendInventory signs and POSTs a host inventory snapshot.
 func (c *Client) SendInventory(assetID int, priv ed25519.PrivateKey, inv collector.Inventory) error {
 	body, err := json.Marshal(inv)
 	if err != nil {
 		return err
 	}
+	return c.postSigned(fmt.Sprintf("/assets/%d/inventory", assetID), priv, body)
+}
 
-	url := fmt.Sprintf("%s/assets/%d/inventory", c.baseURL, assetID)
-	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(body))
+// SendScan signs and POSTs normalized scanner findings for rule evaluation.
+func (c *Client) SendScan(assetID int, priv ed25519.PrivateKey, findings []scan.Finding) error {
+	body, err := json.Marshal(map[string][]scan.Finding{"findings": findings})
+	if err != nil {
+		return err
+	}
+	return c.postSigned(fmt.Sprintf("/assets/%d/scan", assetID), priv, body)
+}
+
+// postSigned signs the exact body bytes (Ed25519) and POSTs them with the
+// signature in the X-Signature header.
+func (c *Client) postSigned(path string, priv ed25519.PrivateKey, body []byte) error {
+	req, err := http.NewRequest(http.MethodPost, c.baseURL+path, bytes.NewReader(body))
 	if err != nil {
 		return err
 	}
