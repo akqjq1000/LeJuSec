@@ -231,6 +231,7 @@ function Remediations({ id }: { id: number }) {
               <th>상태</th>
               <th>정적분석</th>
               <th>검증</th>
+              <th>적용</th>
               <th />
             </tr>
           </thead>
@@ -290,13 +291,14 @@ function RemediationRow({
           </span>
         </td>
         <td>{r.verified ? <span className="badge pass">OK</span> : '-'}</td>
+        <td>{r.apply_status ? <span className="badge">{r.apply_status}</span> : '-'}</td>
         <td>
           <button onClick={onToggle}>{expanded ? '접기' : '상세'}</button>
         </td>
       </tr>
       {expanded ? (
         <tr>
-          <td colSpan={5}>
+          <td colSpan={6}>
             <div className="detail">
               {!r.static_ok && r.static_notes ? (
                 <p className="error">정적 분석 위반: {r.static_notes}</p>

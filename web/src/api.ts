@@ -102,6 +102,7 @@ export interface Remediation {
   static_notes: string
   verified: boolean
   verify_notes: string
+  apply_status: string
 }
 
 export interface CheckItem {

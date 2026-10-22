@@ -14,9 +14,19 @@ import (
 
 	"github.com/akqjq1000/LeJuSec/agent/internal/collector"
 	"github.com/akqjq1000/LeJuSec/agent/internal/fim"
+	"github.com/akqjq1000/LeJuSec/agent/internal/remediate"
 	"github.com/akqjq1000/LeJuSec/agent/internal/scan"
 	"github.com/akqjq1000/LeJuSec/agent/internal/signing"
 )
+
+// ApprovedRemediation is an approved, not-yet-applied remediation to run.
+type ApprovedRemediation struct {
+	ID       int    `json:"id"`
+	CheckID  string `json:"check_id"`
+	Title    string `json:"title"`
+	Script   string `json:"script"`
+	Rollback string `json:"rollback"`
+}
 
 // Client posts signed payloads to a control-plane base URL.
 type Client struct {
@@ -64,25 +74,55 @@ func (c *Client) SendIntegrity(assetID int, priv ed25519.PrivateKey, manifest fi
 	return c.postSigned(fmt.Sprintf("/assets/%d/integrity", assetID), priv, body)
 }
 
+// PullApproved fetches approved, not-yet-applied remediations (signed, empty body).
+func (c *Client) PullApproved(assetID int, priv ed25519.PrivateKey) ([]ApprovedRemediation, error) {
+	raw, err := c.postSignedResponse(fmt.Sprintf("/assets/%d/remediations/pull", assetID), priv, []byte{})
+	if err != nil {
+		return nil, err
+	}
+	var approved []ApprovedRemediation
+	if err := json.Unmarshal(raw, &approved); err != nil {
+		return nil, err
+	}
+	return approved, nil
+}
+
+// ReportApply signs and POSTs remediation apply results.
+func (c *Client) ReportApply(assetID int, priv ed25519.PrivateKey, results []remediate.Result) error {
+	body, err := json.Marshal(map[string][]remediate.Result{"results": results})
+	if err != nil {
+		return err
+	}
+	return c.postSigned(fmt.Sprintf("/assets/%d/remediations/report", assetID), priv, body)
+}
+
 // postSigned signs the exact body bytes (Ed25519) and POSTs them with the
 // signature in the X-Signature header.
 func (c *Client) postSigned(path string, priv ed25519.PrivateKey, body []byte) error {
+	_, err := c.postSignedResponse(path, priv, body)
+	return err
+}
+
+// postSignedResponse signs the body bytes, POSTs them, and returns the response body.
+func (c *Client) postSignedResponse(
+	path string, priv ed25519.PrivateKey, body []byte,
+) ([]byte, error) {
 	req, err := http.NewRequest(http.MethodPost, c.baseURL+path, bytes.NewReader(body))
 	if err != nil {
-		return err
+		return nil, err
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Signature", signing.Sign(priv, body))
 
 	resp, err := c.http.Do(req)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer func() { _ = resp.Body.Close() }()
 
 	respBody, _ := io.ReadAll(resp.Body)
 	if resp.StatusCode >= http.StatusMultipleChoices {
-		return fmt.Errorf("server returned %d: %s", resp.StatusCode, string(respBody))
+		return nil, fmt.Errorf("server returned %d: %s", resp.StatusCode, string(respBody))
 	}
-	return nil
+	return respBody, nil
 }

@@ -69,15 +69,28 @@ go run ./cmd/agent --fim --server https://host:8000 --asset-id 1 --key agent.key
 `--fim-paths` 생략 시 핵심 설정 파일(/etc/passwd, /etc/shadow, /etc/ssh/sshd_config,
 /etc/sudoers, /etc/crontab)을 점검한다.
 
+## 조치 적용(--apply)
+
+승인된 조치를 에이전트가 가져와 대상에 적용하고 결과를 보고한다(실패 시 롤백).
+로컬 denylist로 위험 스크립트를 한 번 더 차단한다(컨트롤 플레인 정적분석에 더해).
+
+```bash
+go run ./cmd/agent --apply --server https://host:8000 --asset-id 1 --key agent.key \
+  --ca-cert certs/ca.crt --client-cert certs/client.crt --client-key certs/client.key
+```
+
+`pull`(승인·미적용 조치 수신) → 적용/롤백 → `report`(결과 보고) 모두 서명 전송이다.
+
 ## 구조
 
 ```
-cmd/agent/              # 진입점 (main; inventory / --scan / --fim)
+cmd/agent/              # 진입점 (main; inventory / --scan / --fim / --apply)
 internal/collector/     # 호스트 인벤토리 수집 (패키지/프로세스/연관 파일)
 internal/scan/          # 스캐너 실행·파싱 (Trivy/Lynis/OpenSCAP) → Finding
 internal/fim/           # 파일 무결성 매니페스트(SHA-256 + 자체 해시)
+internal/remediate/     # 승인 조치 적용(+롤백), 로컬 denylist
 internal/signing/       # Ed25519 키 생성·서명
-internal/client/        # 서명된 인벤토리/스캔/무결성 전송 (+ mTLS)
+internal/client/        # 서명된 인벤토리/스캔/무결성/조치 전송 (+ mTLS)
 ```
 
 바이너리 빌드는 릴리스 워크플로우(`.github/workflows/release.yml`)에서

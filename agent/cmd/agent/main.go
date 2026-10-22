@@ -18,10 +18,12 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/akqjq1000/LeJuSec/agent/internal/client"
 	"github.com/akqjq1000/LeJuSec/agent/internal/collector"
 	"github.com/akqjq1000/LeJuSec/agent/internal/fim"
+	"github.com/akqjq1000/LeJuSec/agent/internal/remediate"
 	"github.com/akqjq1000/LeJuSec/agent/internal/scan"
 	"github.com/akqjq1000/LeJuSec/agent/internal/signing"
 )
@@ -46,6 +48,7 @@ type options struct {
 	clientKey   string
 	scanMode    bool
 	fimMode     bool
+	applyMode   bool
 	fimPathsRaw string
 	scanCfg     scan.Config
 }
@@ -75,6 +78,7 @@ func main() {
 	flag.StringVar(&opts.clientKey, "client-key", "", "client private key for mTLS")
 	flag.BoolVar(&opts.scanMode, "scan", false, "run scanners and report findings")
 	flag.BoolVar(&opts.fimMode, "fim", false, "compute a file-integrity manifest")
+	flag.BoolVar(&opts.applyMode, "apply", false, "pull approved remediations, apply them (with rollback), and report")
 	flag.StringVar(&opts.fimPathsRaw, "fim-paths", "", "comma-separated paths to monitor (default: critical config files)")
 	flag.StringVar(&opts.scanCfg.TrivyPath, "scan-path", "", "filesystem path for `trivy fs` (empty to skip)")
 	flag.StringVar(&opts.scanCfg.LynisReport, "lynis-report", "", "path to a lynis report .dat (empty to skip)")
@@ -100,6 +104,9 @@ func main() {
 func run(opts options) error {
 	// 로컬 출력 모드 (--server 미지정)
 	if opts.server == "" {
+		if opts.applyMode {
+			return fmt.Errorf("--apply requires --server")
+		}
 		payload, err := collect(opts)
 		if err != nil {
 			return err
@@ -135,6 +142,21 @@ func collect(opts options) (any, error) {
 
 func send(api *client.Client, opts options, priv ed25519.PrivateKey) error {
 	switch {
+	case opts.applyMode:
+		approved, err := api.PullApproved(opts.assetID, priv)
+		if err != nil {
+			return err
+		}
+		results := make([]remediate.Result, 0, len(approved))
+		for _, a := range approved {
+			results = append(results, remediate.Apply(a.ID, a.Script, a.Rollback, remediate.ShellRunner(2*time.Minute)))
+		}
+		if len(results) > 0 {
+			if err := api.ReportApply(opts.assetID, priv, results); err != nil {
+				return err
+			}
+		}
+		fmt.Printf("applied %d approved remediation(s)\n", len(results))
 	case opts.fimMode:
 		manifest := fim.Scan(opts.fimPaths())
 		if err := api.SendIntegrity(opts.assetID, priv, manifest); err != nil {
