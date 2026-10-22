@@ -52,14 +52,32 @@ go run ./cmd/agent --scan --scan-path / \
 - `--lynis-report`: 기존 Lynis 리포트 `.dat` 경로. 비우면 생략.
 - `--oscap-results`: OpenSCAP XCCDF 결과 XML 경로. 비우면 생략.
 
+## 무결성 점검(FIM)
+
+모니터링 대상 파일의 SHA-256 매니페스트(+에이전트 자체 해시)를 만들어 전송한다.
+컨트롤 플레인이 중앙 베이스라인과 비교해 변조를 탐지한다.
+
+```bash
+# 로컬 확인
+go run ./cmd/agent --fim --fim-paths /etc/passwd,/etc/ssh/sshd_config
+
+# 서명 전송 (첫 전송은 베이스라인으로 설정, 이후 변경 탐지)
+go run ./cmd/agent --fim --server https://host:8000 --asset-id 1 --key agent.key \
+  --ca-cert certs/ca.crt --client-cert certs/client.crt --client-key certs/client.key
+```
+
+`--fim-paths` 생략 시 핵심 설정 파일(/etc/passwd, /etc/shadow, /etc/ssh/sshd_config,
+/etc/sudoers, /etc/crontab)을 점검한다.
+
 ## 구조
 
 ```
-cmd/agent/              # 진입점 (main; inventory / --scan 모드)
+cmd/agent/              # 진입점 (main; inventory / --scan / --fim)
 internal/collector/     # 호스트 인벤토리 수집 (패키지/프로세스/연관 파일)
 internal/scan/          # 스캐너 실행·파싱 (Trivy/Lynis/OpenSCAP) → Finding
+internal/fim/           # 파일 무결성 매니페스트(SHA-256 + 자체 해시)
 internal/signing/       # Ed25519 키 생성·서명
-internal/client/        # 서명된 인벤토리/스캔 전송 (+ mTLS)
+internal/client/        # 서명된 인벤토리/스캔/무결성 전송 (+ mTLS)
 ```
 
 바이너리 빌드는 릴리스 워크플로우(`.github/workflows/release.yml`)에서

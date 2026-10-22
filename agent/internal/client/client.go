@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/akqjq1000/LeJuSec/agent/internal/collector"
+	"github.com/akqjq1000/LeJuSec/agent/internal/fim"
 	"github.com/akqjq1000/LeJuSec/agent/internal/scan"
 	"github.com/akqjq1000/LeJuSec/agent/internal/signing"
 )
@@ -52,6 +53,15 @@ func (c *Client) SendScan(assetID int, priv ed25519.PrivateKey, findings []scan.
 		return err
 	}
 	return c.postSigned(fmt.Sprintf("/assets/%d/scan", assetID), priv, body)
+}
+
+// SendIntegrity signs and POSTs a file-integrity manifest.
+func (c *Client) SendIntegrity(assetID int, priv ed25519.PrivateKey, manifest fim.Manifest) error {
+	body, err := json.Marshal(manifest)
+	if err != nil {
+		return err
+	}
+	return c.postSigned(fmt.Sprintf("/assets/%d/integrity", assetID), priv, body)
 }
 
 // postSigned signs the exact body bytes (Ed25519) and POSTs them with the
