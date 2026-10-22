@@ -95,6 +95,7 @@ cd LeJuSec
 - [기능 상세 설계](docs/design/features.md)
 - [위협 모델](docs/design/threat-model.md)
 - [기술 스택](docs/design/tech-stack.md)
+- [GUI 구현 계획](docs/design/gui-plan.md)
 - [아키텍처](docs/architecture.md)
 - [개발 로드맵](docs/roadmap.md)
 - [개발 환경 설정](docs/development/getting-started.md)
