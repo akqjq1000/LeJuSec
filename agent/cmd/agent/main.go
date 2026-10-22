@@ -1,8 +1,9 @@
 // Command agent is the LeJuSec target-system agent.
 //
-// Modes:
+// Modes (choose one; default is inventory):
 //   - default: collect host inventory (packages, processes)
-//   - --scan:  run security scanners (Trivy/Lynis/OpenSCAP) and report findings
+//   - --scan:  run security scanners and report findings
+//   - --fim:   compute a file-integrity manifest (SHA-256 + agent self-hash)
 //
 // Without --server the result is printed as JSON; with --server it is signed
 // (Ed25519) and sent to the control plane, optionally over mutual TLS.
@@ -10,14 +11,17 @@
 package main
 
 import (
+	"crypto/ed25519"
 	"crypto/tls"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/akqjq1000/LeJuSec/agent/internal/client"
 	"github.com/akqjq1000/LeJuSec/agent/internal/collector"
+	"github.com/akqjq1000/LeJuSec/agent/internal/fim"
 	"github.com/akqjq1000/LeJuSec/agent/internal/scan"
 	"github.com/akqjq1000/LeJuSec/agent/internal/signing"
 )
@@ -25,15 +29,38 @@ import (
 // version is injected at build time via -ldflags "-X main.version=...".
 var version = "dev"
 
+var defaultFIMPaths = []string{
+	"/etc/passwd",
+	"/etc/shadow",
+	"/etc/ssh/sshd_config",
+	"/etc/sudoers",
+	"/etc/crontab",
+}
+
 type options struct {
-	server     string
-	assetID    int
-	keyPath    string
-	caCert     string
-	clientCert string
-	clientKey  string
-	scanMode   bool
-	scanCfg    scan.Config
+	server      string
+	assetID     int
+	keyPath     string
+	caCert      string
+	clientCert  string
+	clientKey   string
+	scanMode    bool
+	fimMode     bool
+	fimPathsRaw string
+	scanCfg     scan.Config
+}
+
+func (o options) fimPaths() []string {
+	if strings.TrimSpace(o.fimPathsRaw) == "" {
+		return defaultFIMPaths
+	}
+	var paths []string
+	for _, p := range strings.Split(o.fimPathsRaw, ",") {
+		if trimmed := strings.TrimSpace(p); trimmed != "" {
+			paths = append(paths, trimmed)
+		}
+	}
+	return paths
 }
 
 func main() {
@@ -46,7 +73,9 @@ func main() {
 	flag.StringVar(&opts.caCert, "ca-cert", "", "CA certificate to verify the control plane (enables mTLS)")
 	flag.StringVar(&opts.clientCert, "client-cert", "", "client certificate for mTLS")
 	flag.StringVar(&opts.clientKey, "client-key", "", "client private key for mTLS")
-	flag.BoolVar(&opts.scanMode, "scan", false, "run scanners and report findings instead of inventory")
+	flag.BoolVar(&opts.scanMode, "scan", false, "run scanners and report findings")
+	flag.BoolVar(&opts.fimMode, "fim", false, "compute a file-integrity manifest")
+	flag.StringVar(&opts.fimPathsRaw, "fim-paths", "", "comma-separated paths to monitor (default: critical config files)")
 	flag.StringVar(&opts.scanCfg.TrivyPath, "scan-path", "", "filesystem path for `trivy fs` (empty to skip)")
 	flag.StringVar(&opts.scanCfg.LynisReport, "lynis-report", "", "path to a lynis report .dat (empty to skip)")
 	flag.StringVar(&opts.scanCfg.OpenSCAPResults, "oscap-results", "", "path to OpenSCAP XCCDF results XML (empty to skip)")
@@ -69,20 +98,13 @@ func main() {
 }
 
 func run(opts options) error {
-	// 로컬 출력 모드 (--server 미지정): 결과를 JSON으로 출력
+	// 로컬 출력 모드 (--server 미지정)
 	if opts.server == "" {
-		if opts.scanMode {
-			findings, err := scan.Collect(opts.scanCfg)
-			if err != nil {
-				return err
-			}
-			return printJSON(findings)
-		}
-		inv, err := collector.Collect()
+		payload, err := collect(opts)
 		if err != nil {
 			return err
 		}
-		return printJSON(inv)
+		return printJSON(payload)
 	}
 
 	if opts.keyPath == "" || opts.assetID == 0 {
@@ -97,8 +119,29 @@ func run(opts options) error {
 		return err
 	}
 	api := client.New(opts.server, tlsConf)
+	return send(api, opts, priv)
+}
 
-	if opts.scanMode {
+func collect(opts options) (any, error) {
+	switch {
+	case opts.fimMode:
+		return fim.Scan(opts.fimPaths()), nil
+	case opts.scanMode:
+		return scan.Collect(opts.scanCfg)
+	default:
+		return collector.Collect()
+	}
+}
+
+func send(api *client.Client, opts options, priv ed25519.PrivateKey) error {
+	switch {
+	case opts.fimMode:
+		manifest := fim.Scan(opts.fimPaths())
+		if err := api.SendIntegrity(opts.assetID, priv, manifest); err != nil {
+			return err
+		}
+		fmt.Printf("sent integrity: %d files\n", len(manifest.Files))
+	case opts.scanMode:
 		findings, err := scan.Collect(opts.scanCfg)
 		if err != nil {
 			return err
@@ -107,17 +150,16 @@ func run(opts options) error {
 			return err
 		}
 		fmt.Printf("sent scan: %d findings\n", len(findings))
-		return nil
+	default:
+		inv, err := collector.Collect()
+		if err != nil {
+			return err
+		}
+		if err := api.SendInventory(opts.assetID, priv, inv); err != nil {
+			return err
+		}
+		fmt.Printf("sent inventory: %d packages, %d processes\n", len(inv.Packages), len(inv.Processes))
 	}
-
-	inv, err := collector.Collect()
-	if err != nil {
-		return err
-	}
-	if err := api.SendInventory(opts.assetID, priv, inv); err != nil {
-		return err
-	}
-	fmt.Printf("sent inventory: %d packages, %d processes\n", len(inv.Packages), len(inv.Processes))
 	return nil
 }
 

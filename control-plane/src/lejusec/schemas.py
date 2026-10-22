@@ -115,3 +115,36 @@ class VerifyOut(BaseModel):
     ok: bool
     notes: str
     sandbox: str
+
+
+class FileEntryIn(BaseModel):
+    path: str
+    sha256: str
+    size: int = 0
+    mode: str = ""
+
+
+class IntegrityIn(BaseModel):
+    agent_sha256: str = ""
+    files: list[FileEntryIn] = Field(default_factory=list)
+
+
+class IntegrityAck(BaseModel):
+    baseline_established: bool
+    baseline_files: int
+    changes: int
+    critical: int
+    high: int
+
+
+class IntegrityEventOut(BaseModel):
+    path: str
+    change_type: str
+    severity: str
+    detail: str
+    created_at: dt.datetime
+
+
+class BaselineSummary(BaseModel):
+    files: int
+    has_agent_hash: bool

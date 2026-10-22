@@ -11,6 +11,7 @@ from fastapi import FastAPI
 from lejusec import __version__
 from lejusec.api.assets import router as assets_router
 from lejusec.api.checks import router as checks_router
+from lejusec.api.integrity import router as integrity_router
 from lejusec.api.remediations import router as remediations_router
 from lejusec.api.scans import router as scans_router
 from lejusec.db import init_db
@@ -27,6 +28,7 @@ app.include_router(assets_router)
 app.include_router(scans_router)
 app.include_router(checks_router)
 app.include_router(remediations_router)
+app.include_router(integrity_router)
 
 
 @app.get("/healthz")
