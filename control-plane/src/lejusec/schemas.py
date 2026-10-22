@@ -150,6 +150,13 @@ class BaselineSummary(BaseModel):
     has_agent_hash: bool
 
 
+class AuditOut(BaseModel):
+    actor: str
+    action: str
+    target: str
+    created_at: dt.datetime
+
+
 class InventorySummaryOut(BaseModel):
     package_count: int
     process_count: int

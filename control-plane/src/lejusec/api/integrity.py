@@ -4,10 +4,14 @@
 `baseline=true`면 (재)베이스라인으로 설정하고, 그 외에는 변경을 탐지해 이벤트로 저장한다.
 """
 
+import asyncio
+import json
+from collections.abc import AsyncIterator
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query, Request, status
-from sqlalchemy import delete, select
+from fastapi.responses import StreamingResponse
+from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
 from lejusec.api.common import get_or_404, read_signed_body
@@ -124,3 +128,42 @@ def list_events(
         )
         for r in rows
     ]
+
+
+@router.get("/events/integrity")
+async def integrity_stream(session: SessionDep, once: bool = Query(False)) -> StreamingResponse:
+    """무결성 변경 이벤트 실시간 스트림(SSE).
+
+    once=true면 기존 이벤트를 모두 내보내고 종료(테스트/백필용). 그 외에는 연결 시점
+    이후의 새 이벤트만 2초 간격으로 내보낸다.
+    """
+
+    async def gen() -> AsyncIterator[str]:
+        last_id = 0 if once else (session.scalar(select(func.max(IntegrityEventRow.id))) or 0)
+        emitted = False
+        while True:
+            rows = session.scalars(
+                select(IntegrityEventRow)
+                .where(IntegrityEventRow.id > last_id)
+                .order_by(IntegrityEventRow.id)
+            ).all()
+            for r in rows:
+                last_id = r.id
+                payload = json.dumps(
+                    {
+                        "path": r.path,
+                        "change_type": r.change_type,
+                        "severity": r.severity,
+                        "detail": r.detail,
+                    },
+                    ensure_ascii=False,
+                )
+                yield f"data: {payload}\n\n"
+                emitted = True
+            if once:
+                if not emitted:
+                    yield "event: end\ndata: {}\n\n"
+                break
+            await asyncio.sleep(2)
+
+    return StreamingResponse(gen(), media_type="text/event-stream")

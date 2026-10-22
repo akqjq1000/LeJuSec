@@ -11,11 +11,13 @@ from __future__ import annotations
 
 import logging
 
+from sqlalchemy.orm import Session
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 
 from lejusec.config import settings
+from lejusec.models import AuditLogRow
 
 audit_log = logging.getLogger("lejusec.audit")
 
@@ -31,11 +33,30 @@ def _is_agent_signed(request: Request) -> bool:
 
 
 def role_for(request: Request) -> str | None:
-    """요청의 Bearer 토큰에 매핑된 역할(없으면 None)."""
+    """요청의 토큰에 매핑된 역할(없으면 None).
+
+    Authorization: Bearer 헤더를 우선 확인하고, 헤더를 설정하기 어려운 경우(SSE의
+    EventSource 등)를 위해 `?token=` 쿼리 파라미터도 허용한다.
+    """
     header = request.headers.get("authorization", "")
     if header.lower().startswith("bearer "):
-        return settings.operator_token_map.get(header[7:].strip())
-    return None
+        token = header[7:].strip()
+    else:
+        token = request.query_params.get("token", "")
+    return settings.operator_token_map.get(token) if token else None
+
+
+def get_actor(request: Request) -> str:
+    """감사 기록용 행위자 식별자(인증 비활성 시 'dev')."""
+    if not settings.operator_token_map:
+        return "dev"
+    return role_for(request) or "anonymous"
+
+
+def record_audit(session: Session, actor: str, action: str, target: str = "") -> None:
+    """감사 로그 1건을 세션에 추가한다(커밋은 호출자 트랜잭션에서)."""
+    session.add(AuditLogRow(actor=actor, action=action, target=target))
+    audit_log.info("actor=%s action=%s target=%s", actor, action, target)
 
 
 class OperatorAuthMiddleware(BaseHTTPMiddleware):

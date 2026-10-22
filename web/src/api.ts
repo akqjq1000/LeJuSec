@@ -133,8 +133,16 @@ export interface Me {
   auth: string
 }
 
+export interface AuditEntry {
+  actor: string
+  action: string
+  target: string
+  created_at: string
+}
+
 export const api = {
   me: () => get<Me>('/me'),
+  audit: () => get<AuditEntry[]>('/audit'),
   summary: () => get<Summary>('/summary'),
   assets: () => get<Asset[]>('/assets'),
   asset: (id: number) => get<Asset>(`/assets/${id}`),

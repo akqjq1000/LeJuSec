@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 
 from lejusec import sandbox
 from lejusec.api.common import get_or_404
+from lejusec.auth import get_actor, record_audit
 from lejusec.db import get_session
 from lejusec.generator import generate_remediations
 from lejusec.models import RemediationRow, ScanResultRow
@@ -22,6 +23,7 @@ from lejusec.schemas import GenerateAck, RemediationOut, VerifyOut
 router = APIRouter(tags=["remediation"])
 
 SessionDep = Annotated[Session, Depends(get_session)]
+Actor = Annotated[str, Depends(get_actor)]
 
 
 def _to_out(row: RemediationRow) -> RemediationOut:
@@ -120,7 +122,7 @@ def verify_remediation(remediation_id: int, session: SessionDep) -> VerifyOut:
 
 
 @router.post("/remediations/{remediation_id}/approve", response_model=RemediationOut)
-def approve_remediation(remediation_id: int, session: SessionDep) -> RemediationOut:
+def approve_remediation(remediation_id: int, session: SessionDep, actor: Actor) -> RemediationOut:
     """조치안을 승인한다(HITL). 정적 분석 위반이 있으면 승인할 수 없다."""
     row = _get_remediation(session, remediation_id)
     if row.status != "proposed":
@@ -130,18 +132,20 @@ def approve_remediation(remediation_id: int, session: SessionDep) -> Remediation
             status.HTTP_409_CONFLICT, detail="unsafe remediation cannot be approved"
         )
     row.status = "approved"
+    record_audit(session, actor, "remediation.approve", f"rid={remediation_id}")
     session.commit()
     session.refresh(row)
     return _to_out(row)
 
 
 @router.post("/remediations/{remediation_id}/reject", response_model=RemediationOut)
-def reject_remediation(remediation_id: int, session: SessionDep) -> RemediationOut:
+def reject_remediation(remediation_id: int, session: SessionDep, actor: Actor) -> RemediationOut:
     """조치안을 거부한다(HITL)."""
     row = _get_remediation(session, remediation_id)
     if row.status != "proposed":
         raise HTTPException(status.HTTP_409_CONFLICT, detail=f"not in proposed state: {row.status}")
     row.status = "rejected"
+    record_audit(session, actor, "remediation.reject", f"rid={remediation_id}")
     session.commit()
     session.refresh(row)
     return _to_out(row)

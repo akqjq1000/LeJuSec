@@ -36,4 +36,7 @@ npm run build
   전송. 역할(admin/viewer)이 표시되며, viewer는 조치 변경 버튼이 비활성화된다.
   (백엔드가 `LEJUSEC_OPERATOR_TOKENS` 미설정이면 인증 비활성 → admin으로 동작.)
 
-무결성 실시간 알림(SSE)·다크모드·i18n은 추후 추가한다.
+- **감사**: 운영자 쓰기 액션 감사 로그(`/audit`)
+- **무결성 실시간**: 자산 상세의 무결성 탭이 SSE(`/events/integrity`)로 자동 갱신
+
+다크모드·i18n은 추후 추가한다.

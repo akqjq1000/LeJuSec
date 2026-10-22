@@ -1,8 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 
-import { api, type Asset, type Remediation } from '../api'
+import { API_BASE, api, getToken, type Asset, type Remediation } from '../api'
 
 type Tab = 'overview' | 'inventory' | 'checks' | 'integrity' | 'remediations'
 
@@ -126,34 +126,54 @@ function Checks({ id }: { id: number }) {
 }
 
 function Integrity({ id }: { id: number }) {
+  const qc = useQueryClient()
   const q = useQuery({ queryKey: ['integrity', id], queryFn: () => api.integrity(id) })
+
+  // SSE: 새 무결성 이벤트가 도착하면 목록을 갱신한다.
+  useEffect(() => {
+    const token = getToken()
+    const url = `${API_BASE}/events/integrity${token ? `?token=${encodeURIComponent(token)}` : ''}`
+    const es = new EventSource(url)
+    es.onmessage = () => {
+      void qc.invalidateQueries({ queryKey: ['integrity', id] })
+    }
+    es.onerror = () => es.close()
+    return () => es.close()
+  }, [id, qc])
+
   if (q.isLoading) return <p className="muted">불러오는 중…</p>
   if (q.error) return <p className="error">{(q.error as Error).message}</p>
   const events = q.data ?? []
-  if (events.length === 0) return <p className="muted">무결성 변경 이벤트가 없습니다.</p>
   return (
-    <table className="table">
-      <thead>
-        <tr>
-          <th>경로</th>
-          <th>변경</th>
-          <th>심각도</th>
-          <th>시각</th>
-        </tr>
-      </thead>
-      <tbody>
-        {events.map((e, i) => (
-          <tr key={`${e.path}-${i}`}>
-            <td>{e.path}</td>
-            <td>{e.change_type}</td>
-            <td>
-              <span className={`badge ${e.severity}`}>{e.severity}</span>
-            </td>
-            <td>{new Date(e.created_at).toLocaleString()}</td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
+    <>
+      <p className="muted" style={{ marginTop: 0 }}>● 실시간 감시 중 (SSE)</p>
+      {events.length === 0 ? (
+        <p className="muted">무결성 변경 이벤트가 없습니다.</p>
+      ) : (
+        <table className="table">
+          <thead>
+            <tr>
+              <th>경로</th>
+              <th>변경</th>
+              <th>심각도</th>
+              <th>시각</th>
+            </tr>
+          </thead>
+          <tbody>
+            {events.map((e, i) => (
+              <tr key={`${e.path}-${i}`}>
+                <td>{e.path}</td>
+                <td>{e.change_type}</td>
+                <td>
+                  <span className={`badge ${e.severity}`}>{e.severity}</span>
+                </td>
+                <td>{new Date(e.created_at).toLocaleString()}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </>
   )
 }
 

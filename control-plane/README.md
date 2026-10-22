@@ -57,6 +57,8 @@ CA/서버/클라이언트 개인키(`*.key`)는 `.gitignore`로 커밋되지 않
 | POST | `/assets/{id}/integrity` | 서명된 무결성 매니페스트 수신(베이스라인/변경 탐지) |
 | GET | `/assets/{id}/integrity/events`·`/baseline` | 무결성 이벤트/베이스라인 조회 |
 | GET | `/me` | 현재 운영자 역할 |
+| GET | `/audit` | 감사 로그(운영자 쓰기 액션) |
+| GET | `/events/integrity` | 무결성 변경 실시간 스트림(SSE; `once=true`로 백필) |
 | DELETE | `/assets/{id}` | 등록 삭제 |
 
 ### 운영자 인증(RBAC)
