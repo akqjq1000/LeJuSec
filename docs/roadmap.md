@@ -17,13 +17,14 @@
 ### Phase 2 — 점검 + RAG 근거 (기능 1·4)
 - [x] 점검 도구 래핑 (OpenSCAP/Lynis/Trivy 결과 파서 → 정규화 Finding)
 - [x] 룰 엔진: 결정론적 합격/불합격/비적용 판정 (`rules.evaluate`)
-- [x] RAG 지식베이스: 점검 기준(KISA/CIS) 코퍼스 + 어휘 검색 근거 (임베딩 retriever로 교체 가능)
+- [x] RAG 지식베이스: 점검 기준(KISA/CIS) 코퍼스 + 근거 검색 (해싱 임베딩 코사인 기본, 어휘 백엔드 선택 가능, 공급자 교체 가능)
 - [x] 도구 라우팅: 대상 유형별 allowlist (`scanners.select_tools`)
 - [x] 점검 결과 저장 + 서명 수신 (`POST /assets/{id}/scan`, 증적 원본 보관)
 
 - [x] 에이전트 스캐너 실행: Trivy/Lynis/OpenSCAP 실행·파싱 → 서명 전송(`POST /assets/{id}/scan`, `--scan`)
+- [x] 임베딩 기반 RAG: 해싱 임베딩 코사인 검색(`LEJUSEC_RAG_BACKEND`), `EmbeddingProvider` 교체 가능
 
-**완료 기준**: 대상에 맞는 도구가 자동 선택되어 점검이 실행되고, 판정 결과에 근거가 첨부된다. → **충족**. (남음: 임베딩 기반 RAG retriever로 교체)
+**완료 기준**: 대상에 맞는 도구가 자동 선택되어 점검이 실행되고, 판정 결과에 근거가 첨부된다. → **충족**.
 
 ### Phase 3 — 조치 + 샌드박스 (기능 5)
 - [x] 조치안 + 롤백 생성: 지식베이스 fix/rollback 템플릿 (LLM 생성기로 교체 가능)
