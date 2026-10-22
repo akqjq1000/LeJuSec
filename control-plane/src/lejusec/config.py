@@ -40,6 +40,11 @@ class Settings(BaseSettings):
     llm_api_key: str = ""
     llm_model: str = "claude-opus-5-5"
 
+    # 샌드박스 검증 백엔드: "dry-run"(기본, 정적 재확인) | "container"(Docker 실제 적용).
+    sandbox_backend: str = "dry-run"
+    sandbox_image: str = "ubuntu:24.04"
+    sandbox_timeout: int = 120
+
     @property
     def cors_origin_list(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]

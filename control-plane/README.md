@@ -75,6 +75,13 @@ CA/서버/클라이언트 개인키(`*.key`)는 `.gitignore`로 커밋되지 않
 (`pip install -e ".[llm]"` 필요). LLM 출력이 정적 분석을 통과하지 못하거나 호출이
 실패하면 템플릿으로 폴백한다.
 
+### 샌드박스 검증
+
+`LEJUSEC_SANDBOX_BACKEND`(`dry-run` 기본 | `container`). `container`는 격리된 Docker
+컨테이너(`--network=none`, 메모리/PID 제한)에서 조치 스크립트를 실제 적용해 오류 없이
+수행되는지 확인한다(`LEJUSEC_SANDBOX_IMAGE`, 기본 `ubuntu:24.04`). 어느 백엔드든 조치는
+먼저 정적 분석을 통과해야 한다.
+
 ## 구조
 
 ```
