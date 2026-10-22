@@ -32,6 +32,9 @@ class Settings(BaseSettings):
     # role은 admin(쓰기 허용) 또는 viewer(읽기 전용).
     operator_tokens: str = ""
 
+    # RAG 근거 검색 백엔드: "embedding"(기본, 해싱 벡터 코사인) | "lexical"(토큰 겹침).
+    rag_backend: str = "embedding"
+
     @property
     def cors_origin_list(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
