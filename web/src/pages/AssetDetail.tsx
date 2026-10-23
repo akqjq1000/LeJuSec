@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 
+import ConfirmModal from '../components/ConfirmModal'
 import { API_BASE, api, getToken, type Asset, type Remediation } from '../api'
 
 type Tab = 'overview' | 'inventory' | 'checks' | 'integrity' | 'remediations'
@@ -55,13 +56,106 @@ function Overview({ asset }: { asset: Asset }) {
     ['등록 시각', new Date(asset.created_at).toLocaleString()],
   ]
   return (
-    <div className="kv">
-      {rows.map(([k, v]) => (
-        <div key={k}>
-          <span className="k">{k}</span>
-          <span>{v}</span>
-        </div>
-      ))}
+    <>
+      <div className="kv">
+        {rows.map(([k, v]) => (
+          <div key={k}>
+            <span className="k">{k}</span>
+            <span>{v}</span>
+          </div>
+        ))}
+      </div>
+      <AssetActions asset={asset} />
+    </>
+  )
+}
+
+function AssetActions({ asset }: { asset: Asset }) {
+  const qc = useQueryClient()
+  const navigate = useNavigate()
+  const me = useQuery({ queryKey: ['me'], queryFn: api.me, retry: false })
+  const canWrite = me.data?.role === 'admin'
+  const [publicKey, setPublicKey] = useState('')
+  const [confirmDelete, setConfirmDelete] = useState(false)
+
+  const refresh = () => {
+    void qc.invalidateQueries({ queryKey: ['asset', asset.id] })
+    void qc.invalidateQueries({ queryKey: ['assets'] })
+  }
+  const keyM = useMutation({
+    mutationFn: () => api.setKey(asset.id, publicKey.trim()),
+    onSuccess: () => {
+      setPublicKey('')
+      refresh()
+    },
+  })
+  const manageM = useMutation({
+    mutationFn: () => (asset.managed ? api.unmanageAsset(asset.id) : api.manageAsset(asset.id)),
+    onSuccess: refresh,
+  })
+  const deleteM = useMutation({
+    mutationFn: () => api.deleteAsset(asset.id),
+    onSuccess: () => {
+      setConfirmDelete(false)
+      void qc.invalidateQueries({ queryKey: ['assets'] })
+      navigate('/assets')
+    },
+  })
+
+  if (!canWrite) {
+    return <p className="muted section-title">읽기 전용 역할 — 자산 액션 권한 없음</p>
+  }
+
+  const busy = keyM.isPending || manageM.isPending || deleteM.isPending
+  const actionError =
+    (keyM.error as Error | null) ??
+    (manageM.error as Error | null) ??
+    (deleteM.error as Error | null)
+
+  return (
+    <div>
+      <div className="section-title">공개키</div>
+      <div className="toolbar">
+        <input
+          className="input"
+          placeholder={asset.public_key ? '새 Ed25519 공개키(base64)로 갱신' : 'Ed25519 공개키(base64) 등록'}
+          value={publicKey}
+          onChange={(e) => setPublicKey(e.target.value)}
+        />
+        <button className="btn-primary" onClick={() => keyM.mutate()} disabled={busy || !publicKey.trim()}>
+          {asset.public_key ? '공개키 갱신' : '공개키 등록'}
+        </button>
+        {asset.public_key ? <span className="muted">등록됨</span> : <span className="muted">미등록</span>}
+      </div>
+
+      <div className="section-title">관리</div>
+      <div className="toolbar">
+        <button onClick={() => manageM.mutate()} disabled={busy}>
+          {asset.managed ? '관리 해제' : '관리 지정'}
+        </button>
+        <span className="muted">{asset.managed ? '현재 관리 중' : '현재 미관리'}</span>
+      </div>
+
+      <div className="section-title">위험 구역</div>
+      <div className="toolbar">
+        <button className="btn-danger" onClick={() => setConfirmDelete(true)} disabled={busy}>
+          자산 삭제
+        </button>
+        <span className="muted">자산과 모든 점검·조치·무결성 기록이 삭제됩니다</span>
+      </div>
+
+      {actionError ? <p className="error">{actionError.message}</p> : null}
+
+      <ConfirmModal
+        open={confirmDelete}
+        title="자산 삭제"
+        message={`'${asset.hostname}' 자산과 연관된 모든 기록이 영구 삭제됩니다. 계속할까요?`}
+        confirmLabel="삭제"
+        danger
+        busy={deleteM.isPending}
+        onConfirm={() => deleteM.mutate()}
+        onCancel={() => setConfirmDelete(false)}
+      />
     </div>
   )
 }
