@@ -35,8 +35,14 @@ async function get<T>(path: string): Promise<T> {
   return (await res.json()) as T
 }
 
-async function post<T>(path: string): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, { method: 'POST', headers: authHeaders() })
+async function post<T>(path: string, body?: unknown): Promise<T> {
+  const headers: Record<string, string> = { ...authHeaders() }
+  let payload: string | undefined
+  if (body !== undefined) {
+    headers['Content-Type'] = 'application/json'
+    payload = JSON.stringify(body)
+  }
+  const res = await fetch(`${API_BASE}${path}`, { method: 'POST', headers, body: payload })
   if (!res.ok) {
     const detail = await res.text().catch(() => '')
     throw new Error(`${res.status} ${res.statusText}${detail ? `: ${detail}` : ''}`)
@@ -105,6 +111,16 @@ export interface Remediation {
   apply_status: string
 }
 
+export interface Command {
+  id: number
+  kind: string
+  status: string
+  result: string
+  created_at: string
+  claimed_at: string | null
+  done_at: string | null
+}
+
 export interface CheckItem {
   id: string
   standard: string
@@ -147,6 +163,12 @@ export const api = {
   summary: () => get<Summary>('/summary'),
   assets: () => get<Asset[]>('/assets'),
   asset: (id: number) => get<Asset>(`/assets/${id}`),
+  // 자산 등록 (G: 운영자 쓰기)
+  registerAsset: (body: { hostname: string; os: string; os_version: string; role: string }) =>
+    post<Asset>('/assets', body),
+  // 원격 검사 트리거 (서버→에이전트 명령 채널)
+  scanRequests: (id: number) => get<Command[]>(`/assets/${id}/scan-requests`),
+  requestScan: (id: number) => post<Command>(`/assets/${id}/scan-requests`),
   inventory: (id: number) => get<InventorySummary>(`/assets/${id}/inventory`),
   results: (id: number) => get<CheckResult[]>(`/assets/${id}/results`),
   integrity: (id: number) => get<IntegrityEvent[]>(`/assets/${id}/integrity/events`),

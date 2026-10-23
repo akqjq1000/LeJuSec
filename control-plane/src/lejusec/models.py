@@ -118,6 +118,30 @@ class IntegrityEventRow(Base):
     )
 
 
+class AgentCommandRow(Base):
+    """서버→에이전트 명령(폴링 채널) 1건.
+
+    상태기계: pending → claimed(에이전트가 pull) → done|failed(에이전트가 report).
+    에이전트는 서명된 pull/report로만 접근하며(운영자 토큰 면제), 운영자는
+    scan-requests 엔드포인트로 생성/조회한다.
+    """
+
+    __tablename__ = "agent_commands"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    asset_id: Mapped[int] = mapped_column(ForeignKey("assets.id", ondelete="CASCADE"), index=True)
+    kind: Mapped[str] = mapped_column(String(16))  # 현재 "scan"
+    status: Mapped[str] = mapped_column(String(16), default="pending")
+    # 향후 스캔 프로파일 등 확장 자리(JSON). 현재 미사용.
+    params: Mapped[str] = mapped_column(Text, default="")
+    result: Mapped[str] = mapped_column(String(255), default="")
+    created_at: Mapped[dt.datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    claimed_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True), default=None)
+    done_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True), default=None)
+
+
 class AuditLogRow(Base):
     """운영자 쓰기 액션 감사 기록."""
 

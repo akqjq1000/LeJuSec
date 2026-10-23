@@ -90,38 +90,103 @@ function Inventory({ id }: { id: number }) {
 }
 
 function Checks({ id }: { id: number }) {
+  const qc = useQueryClient()
   const q = useQuery({ queryKey: ['results', id], queryFn: () => api.results(id) })
+  const me = useQuery({ queryKey: ['me'], queryFn: api.me, retry: false })
+  const canWrite = me.data?.role === 'admin'
+
+  // 검사 요청(서버→에이전트 명령). 진행 중(pending/claimed)일 때 주기 폴링.
+  const reqs = useQuery({
+    queryKey: ['scan-requests', id],
+    queryFn: () => api.scanRequests(id),
+    refetchInterval: (query) => {
+      const list = query.state.data ?? []
+      return list.some((c) => c.status === 'pending' || c.status === 'claimed') ? 3000 : false
+    },
+  })
+  const requestM = useMutation({
+    mutationFn: () => api.requestScan(id),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['scan-requests', id] })
+    },
+  })
+
   if (q.isLoading) return <p className="muted">불러오는 중…</p>
   if (q.error) return <p className="error">{(q.error as Error).message}</p>
   const results = q.data ?? []
-  if (results.length === 0) return <p className="muted">점검 결과가 없습니다.</p>
+  const requests = reqs.data ?? []
+
   return (
-    <table className="table">
-      <thead>
-        <tr>
-          <th>항목</th>
-          <th>상태</th>
-          <th>심각도</th>
-          <th>사유</th>
-        </tr>
-      </thead>
-      <tbody>
-        {results.map((r) => (
-          <tr key={r.check_id}>
-            <td>
-              {r.check_id} · {r.title}
-            </td>
-            <td>
-              <span className={`badge ${r.status}`}>{r.status}</span>
-            </td>
-            <td>
-              <span className={`badge ${r.severity}`}>{r.severity}</span>
-            </td>
-            <td>{r.reason}</td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
+    <div>
+      <div className="toolbar">
+        <button onClick={() => requestM.mutate()} disabled={requestM.isPending || !canWrite}>
+          검사 요청
+        </button>
+        <span className="muted">
+          에이전트가 다음 폴링에서 수집·판정을 수행합니다
+          {!canWrite ? ' (읽기 전용 역할 — 요청 권한 없음)' : ''}
+        </span>
+        {requestM.error ? <span className="error">{(requestM.error as Error).message}</span> : null}
+      </div>
+
+      {requests.length > 0 ? (
+        <table className="table" style={{ marginBottom: '1rem' }}>
+          <thead>
+            <tr>
+              <th>검사 요청</th>
+              <th>상태</th>
+              <th>결과</th>
+              <th>요청 시각</th>
+            </tr>
+          </thead>
+          <tbody>
+            {requests.map((c) => (
+              <tr key={c.id}>
+                <td>#{c.id}</td>
+                <td>
+                  <span className={`badge ${c.status === 'done' ? 'pass' : c.status === 'failed' ? 'fail' : ''}`}>
+                    {c.status}
+                  </span>
+                </td>
+                <td>{c.result || '-'}</td>
+                <td>{new Date(c.created_at).toLocaleString()}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      ) : null}
+
+      {results.length === 0 ? (
+        <p className="muted">점검 결과가 없습니다. 검사를 요청하거나 에이전트 스캔을 기다리세요.</p>
+      ) : (
+        <table className="table">
+          <thead>
+            <tr>
+              <th>항목</th>
+              <th>상태</th>
+              <th>심각도</th>
+              <th>사유</th>
+            </tr>
+          </thead>
+          <tbody>
+            {results.map((r) => (
+              <tr key={r.check_id}>
+                <td>
+                  {r.check_id} · {r.title}
+                </td>
+                <td>
+                  <span className={`badge ${r.status}`}>{r.status}</span>
+                </td>
+                <td>
+                  <span className={`badge ${r.severity}`}>{r.severity}</span>
+                </td>
+                <td>{r.reason}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
   )
 }
 
@@ -213,9 +278,20 @@ function Remediations({ id }: { id: number }) {
     <div>
       <div className="toolbar">
         <button onClick={() => genM.mutate()} disabled={busy || !canWrite}>
-          불합격 항목 조치안 생성
+          {rems.length > 0 ? '불합격 항목 조치안 재생성' : '불합격 항목 조치안 생성'}
         </button>
-        {!canWrite ? <span className="muted">읽기 전용 역할 — 조치 변경 권한 없음</span> : null}
+        {genM.isSuccess ? (
+          <span className="muted">
+            {genM.data.generated > 0
+              ? `조치안 ${genM.data.generated}건 생성됨`
+              : '생성할 불합격 항목이 없습니다 (먼저 검사 필요)'}
+          </span>
+        ) : (
+          <span className="muted">
+            최근 점검의 불합격 항목으로 조치안을 생성합니다
+            {!canWrite ? ' (읽기 전용 역할 — 조치 변경 권한 없음)' : ''}
+          </span>
+        )}
         {actionError ? <span className="error">{actionError.message}</span> : null}
       </div>
 

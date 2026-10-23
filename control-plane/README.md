@@ -55,6 +55,8 @@ CA/서버/클라이언트 개인키(`*.key`)는 `.gitignore`로 커밋되지 않
 | POST | `/remediations/{rid}/verify` | 샌드박스 드라이런 검증 |
 | POST | `/remediations/{rid}/approve`·`/reject` | HITL 승인/거부 (unsafe는 승인 불가) |
 | POST | `/assets/{id}/remediations/pull`·`/report` | 에이전트: 승인 조치 수신 / 적용 결과 보고 (서명) |
+| POST·GET | `/assets/{id}/scan-requests` | 운영자: 원격 검사(스캔) 요청 큐잉 / 상태 조회 |
+| POST | `/assets/{id}/commands/pull`·`/report` | 에이전트: 대기 명령 수신 / 실행 결과 보고 (서명) |
 | POST | `/assets/{id}/integrity` | 서명된 무결성 매니페스트 수신(베이스라인/변경 탐지) |
 | GET | `/assets/{id}/integrity/events`·`/baseline` | 무결성 이벤트/베이스라인 조회 |
 | GET | `/me` | 현재 운영자 역할 |

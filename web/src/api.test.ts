@@ -63,6 +63,34 @@ describe('api client', () => {
     )
   })
 
+  it('registerAsset POSTs a JSON body to /assets', async () => {
+    const fetchMock = vi.fn(
+      async () => ({ ok: true, json: async () => ({ id: 5, hostname: 'h1' }) }) as unknown as Response,
+    )
+    vi.stubGlobal('fetch', fetchMock)
+    await api.registerAsset({ hostname: 'h1', os: 'ubuntu', os_version: '26.04', role: 'test' })
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('/assets'),
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ hostname: 'h1', os: 'ubuntu', os_version: '26.04', role: 'test' }),
+      }),
+    )
+  })
+
+  it('requestScan POSTs to the scan-requests path', async () => {
+    const fetchMock = vi.fn(
+      async () => ({ ok: true, json: async () => ({ id: 1, kind: 'scan', status: 'pending' }) }) as unknown as Response,
+    )
+    vi.stubGlobal('fetch', fetchMock)
+    const cmd = await api.requestScan(3)
+    expect(cmd.kind).toBe('scan')
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('/assets/3/scan-requests'),
+      expect.objectContaining({ method: 'POST' }),
+    )
+  })
+
   it('surfaces 409 detail on unsafe approve', async () => {
     vi.stubGlobal(
       'fetch',
