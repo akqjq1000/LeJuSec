@@ -91,6 +91,50 @@ describe('api client', () => {
     )
   })
 
+  it('setKey PUTs the public key', async () => {
+    const fetchMock = vi.fn(
+      async () => ({ ok: true, json: async () => ({ id: 1, public_key: 'K' }) }) as unknown as Response,
+    )
+    vi.stubGlobal('fetch', fetchMock)
+    await api.setKey(1, 'pubkeyB64')
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('/assets/1/key'),
+      expect.objectContaining({
+        method: 'PUT',
+        body: JSON.stringify({ public_key: 'pubkeyB64' }),
+      }),
+    )
+  })
+
+  it('manageAsset/unmanageAsset POST to the right paths', async () => {
+    const fetchMock = vi.fn(
+      async () => ({ ok: true, json: async () => ({ id: 1 }) }) as unknown as Response,
+    )
+    vi.stubGlobal('fetch', fetchMock)
+    await api.manageAsset(1)
+    await api.unmanageAsset(1)
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      expect.stringContaining('/assets/1/manage'),
+      expect.objectContaining({ method: 'POST' }),
+    )
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      expect.stringContaining('/assets/1/unmanage'),
+      expect.objectContaining({ method: 'POST' }),
+    )
+  })
+
+  it('deleteAsset sends DELETE and resolves on ok', async () => {
+    const fetchMock = vi.fn(async () => ({ ok: true }) as unknown as Response)
+    vi.stubGlobal('fetch', fetchMock)
+    await expect(api.deleteAsset(2)).resolves.toBeUndefined()
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('/assets/2'),
+      expect.objectContaining({ method: 'DELETE' }),
+    )
+  })
+
   it('surfaces 409 detail on unsafe approve', async () => {
     vi.stubGlobal(
       'fetch',

@@ -491,6 +491,54 @@ button:disabled {
 .muted {
   color: var(--muted);
 }
+
+/* ---- Modal ---- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 14, 22, 0.55);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--s-4);
+  z-index: 50;
+}
+.modal {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-2);
+  padding: var(--s-5);
+  width: 100%;
+  max-width: 420px;
+}
+.modal-title {
+  margin: 0 0 var(--s-2);
+  font-size: 17px;
+  font-weight: 700;
+}
+.modal-body {
+  margin: 0 0 var(--s-5);
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--s-2);
+}
+
+/* 액션 섹션 구분선 */
+.section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin: var(--s-5) 0 var(--s-2);
+}
 pre {
   background: var(--bg);
   border: 1px solid var(--border);
