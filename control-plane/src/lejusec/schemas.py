@@ -129,6 +129,40 @@ class ApplyReportAck(BaseModel):
     updated: int
 
 
+class CommandOut(BaseModel):
+    """운영자 콘솔용 명령 상태."""
+
+    id: int
+    kind: str
+    status: str
+    result: str
+    created_at: dt.datetime
+    claimed_at: dt.datetime | None
+    done_at: dt.datetime | None
+
+
+class AgentCommandOut(BaseModel):
+    """에이전트 pull 응답(내부 상태 필드는 비노출)."""
+
+    id: int
+    kind: str
+    params: str
+
+
+class CommandResultIn(BaseModel):
+    id: int
+    status: str  # done | failed
+    result: str = ""
+
+
+class CommandReportIn(BaseModel):
+    results: list[CommandResultIn] = Field(default_factory=list)
+
+
+class CommandReportAck(BaseModel):
+    updated: int
+
+
 class GenerateAck(BaseModel):
     generated: int
     proposed: list[RemediationOut]

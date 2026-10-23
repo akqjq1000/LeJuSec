@@ -49,6 +49,7 @@ type options struct {
 	scanMode    bool
 	fimMode     bool
 	applyMode   bool
+	pollMode    bool
 	fimPathsRaw string
 	scanCfg     scan.Config
 }
@@ -79,6 +80,7 @@ func main() {
 	flag.BoolVar(&opts.scanMode, "scan", false, "run scanners and report findings")
 	flag.BoolVar(&opts.fimMode, "fim", false, "compute a file-integrity manifest")
 	flag.BoolVar(&opts.applyMode, "apply", false, "pull approved remediations, apply them (with rollback), and report")
+	flag.BoolVar(&opts.pollMode, "poll", false, "pull queued server commands (e.g. scan), execute them, and report")
 	flag.StringVar(&opts.fimPathsRaw, "fim-paths", "", "comma-separated paths to monitor (default: critical config files)")
 	flag.StringVar(&opts.scanCfg.TrivyPath, "scan-path", "", "filesystem path for `trivy fs` (empty to skip)")
 	flag.StringVar(&opts.scanCfg.LynisReport, "lynis-report", "", "path to a lynis report .dat (empty to skip)")
@@ -106,6 +108,9 @@ func run(opts options) error {
 	if opts.server == "" {
 		if opts.applyMode {
 			return fmt.Errorf("--apply requires --server")
+		}
+		if opts.pollMode {
+			return fmt.Errorf("--poll requires --server")
 		}
 		payload, err := collect(opts)
 		if err != nil {
@@ -142,6 +147,8 @@ func collect(opts options) (any, error) {
 
 func send(api *client.Client, opts options, priv ed25519.PrivateKey) error {
 	switch {
+	case opts.pollMode:
+		return poll(api, opts, priv)
 	case opts.applyMode:
 		approved, err := api.PullApproved(opts.assetID, priv)
 		if err != nil {
@@ -183,6 +190,53 @@ func send(api *client.Client, opts options, priv ed25519.PrivateKey) error {
 		fmt.Printf("sent inventory: %d packages, %d processes\n", len(inv.Packages), len(inv.Processes))
 	}
 	return nil
+}
+
+// poll pulls queued server commands, executes each (currently scan), pushes any
+// scan findings, and reports per-command results. One-shot: run under cron/timer
+// for periodic polling.
+func poll(api *client.Client, opts options, priv ed25519.PrivateKey) error {
+	commands, err := api.PullCommands(opts.assetID, priv)
+	if err != nil {
+		return err
+	}
+	results := make([]client.CommandResult, 0, len(commands))
+	for _, cmd := range commands {
+		switch cmd.Kind {
+		case "scan":
+			results = append(results, runScanCommand(api, opts, priv, cmd))
+		default:
+			results = append(results, client.CommandResult{
+				ID: cmd.ID, Status: "failed", Result: "unknown command kind: " + cmd.Kind,
+			})
+		}
+	}
+	if len(results) > 0 {
+		if err := api.ReportCommands(opts.assetID, priv, results); err != nil {
+			return err
+		}
+	}
+	fmt.Printf("polled: executed %d command(s)\n", len(results))
+	return nil
+}
+
+// runScanCommand runs the configured scanners and pushes findings, returning the
+// command result.
+func runScanCommand(
+	api *client.Client, opts options, priv ed25519.PrivateKey, cmd client.AgentCommand,
+) client.CommandResult {
+	findings, err := scan.Collect(opts.scanCfg)
+	if err != nil {
+		return client.CommandResult{ID: cmd.ID, Status: "failed", Result: "scan: " + err.Error()}
+	}
+	if err := api.SendScan(opts.assetID, priv, findings); err != nil {
+		return client.CommandResult{ID: cmd.ID, Status: "failed", Result: "send: " + err.Error()}
+	}
+	return client.CommandResult{
+		ID:     cmd.ID,
+		Status: "done",
+		Result: fmt.Sprintf("%d findings", len(findings)),
+	}
 }
 
 // buildTLS returns a mutual-TLS config when the three cert flags are set, nil

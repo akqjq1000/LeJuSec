@@ -12,6 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from lejusec import __version__
 from lejusec.api.assets import router as assets_router
 from lejusec.api.checks import router as checks_router
+from lejusec.api.commands import router as commands_router
 from lejusec.api.integrity import router as integrity_router
 from lejusec.api.operator import router as operator_router
 from lejusec.api.remediations import router as remediations_router
@@ -42,6 +43,7 @@ if settings.cors_origin_list:
     )
 
 app.include_router(assets_router)
+app.include_router(commands_router)
 app.include_router(scans_router)
 app.include_router(checks_router)
 app.include_router(remediations_router)

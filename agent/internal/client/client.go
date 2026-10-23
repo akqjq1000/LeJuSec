@@ -28,6 +28,20 @@ type ApprovedRemediation struct {
 	Rollback string `json:"rollback"`
 }
 
+// AgentCommand is a server-queued command for the agent to execute.
+type AgentCommand struct {
+	ID     int    `json:"id"`
+	Kind   string `json:"kind"`
+	Params string `json:"params"`
+}
+
+// CommandResult is the outcome of executing one AgentCommand.
+type CommandResult struct {
+	ID     int    `json:"id"`
+	Status string `json:"status"` // done | failed
+	Result string `json:"result"`
+}
+
 // Client posts signed payloads to a control-plane base URL.
 type Client struct {
 	baseURL string
@@ -94,6 +108,28 @@ func (c *Client) ReportApply(assetID int, priv ed25519.PrivateKey, results []rem
 		return err
 	}
 	return c.postSigned(fmt.Sprintf("/assets/%d/remediations/report", assetID), priv, body)
+}
+
+// PullCommands fetches pending server commands (signed, empty body).
+func (c *Client) PullCommands(assetID int, priv ed25519.PrivateKey) ([]AgentCommand, error) {
+	raw, err := c.postSignedResponse(fmt.Sprintf("/assets/%d/commands/pull", assetID), priv, []byte{})
+	if err != nil {
+		return nil, err
+	}
+	var commands []AgentCommand
+	if err := json.Unmarshal(raw, &commands); err != nil {
+		return nil, err
+	}
+	return commands, nil
+}
+
+// ReportCommands signs and POSTs command execution results.
+func (c *Client) ReportCommands(assetID int, priv ed25519.PrivateKey, results []CommandResult) error {
+	body, err := json.Marshal(map[string][]CommandResult{"results": results})
+	if err != nil {
+		return err
+	}
+	return c.postSigned(fmt.Sprintf("/assets/%d/commands/report", assetID), priv, body)
 }
 
 // postSigned signs the exact body bytes (Ed25519) and POSTs them with the
