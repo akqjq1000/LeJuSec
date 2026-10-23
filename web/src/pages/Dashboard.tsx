@@ -36,6 +36,7 @@ export default function Dashboard() {
   return (
     <section>
       <h1>대시보드</h1>
+      <p className="subtitle">자산·점검·조치·무결성 현황 요약</p>
       <div className="cards">
         {cards.map((c) => (
           <div key={c.label} className={`card ${c.tone ?? ''}`}>

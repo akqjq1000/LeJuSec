@@ -1,6 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
-import { Link, Route, Routes } from 'react-router-dom'
+import { NavLink, Route, Routes } from 'react-router-dom'
+
+const navClass = ({ isActive }: { isActive: boolean }) => (isActive ? 'active' : '')
 
 import { api, getToken, setToken } from './api'
 import AssetDetail from './pages/AssetDetail'
@@ -43,10 +45,18 @@ export default function App() {
       <header className="topbar">
         <span className="brand">LeJuSec</span>
         <nav>
-          <Link to="/">대시보드</Link>
-          <Link to="/assets">자산</Link>
-          <Link to="/checks">점검 기준</Link>
-          <Link to="/audit">감사</Link>
+          <NavLink to="/" end className={navClass}>
+            대시보드
+          </NavLink>
+          <NavLink to="/assets" className={navClass}>
+            자산
+          </NavLink>
+          <NavLink to="/checks" className={navClass}>
+            점검 기준
+          </NavLink>
+          <NavLink to="/audit" className={navClass}>
+            감사
+          </NavLink>
         </nav>
         <AuthControl />
       </header>

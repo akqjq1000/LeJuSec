@@ -119,7 +119,11 @@ function Checks({ id }: { id: number }) {
   return (
     <div>
       <div className="toolbar">
-        <button onClick={() => requestM.mutate()} disabled={requestM.isPending || !canWrite}>
+        <button
+          className="btn-primary"
+          onClick={() => requestM.mutate()}
+          disabled={requestM.isPending || !canWrite}
+        >
           검사 요청
         </button>
         <span className="muted">
@@ -277,7 +281,7 @@ function Remediations({ id }: { id: number }) {
   return (
     <div>
       <div className="toolbar">
-        <button onClick={() => genM.mutate()} disabled={busy || !canWrite}>
+        <button className="btn-primary" onClick={() => genM.mutate()} disabled={busy || !canWrite}>
           {rems.length > 0 ? '불합격 항목 조치안 재생성' : '불합격 항목 조치안 생성'}
         </button>
         {genM.isSuccess ? (
@@ -388,10 +392,18 @@ function RemediationRow({
                 <button onClick={onVerify} disabled={busy || !canWrite}>
                   샌드박스 검증
                 </button>
-                <button onClick={onApprove} disabled={busy || !canWrite || !isProposed || !r.static_ok}>
+                <button
+                  className="btn-primary"
+                  onClick={onApprove}
+                  disabled={busy || !canWrite || !isProposed || !r.static_ok}
+                >
                   승인
                 </button>
-                <button onClick={onReject} disabled={busy || !canWrite || !isProposed}>
+                <button
+                  className="btn-danger"
+                  onClick={onReject}
+                  disabled={busy || !canWrite || !isProposed}
+                >
                   거부
                 </button>
               </div>
