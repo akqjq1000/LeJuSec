@@ -22,6 +22,7 @@ export default function Checks() {
   return (
     <section>
       <h1>점검 기준 (RAG 근거)</h1>
+      <p className="subtitle">KISA/CIS 점검 항목과 근거를 임베딩 검색</p>
       <form className="toolbar" onSubmit={submit}>
         <input
           className="input"
@@ -29,7 +30,9 @@ export default function Checks() {
           value={input}
           onChange={(e) => setInput(e.target.value)}
         />
-        <button type="submit">검색</button>
+        <button type="submit" className="btn-primary">
+          검색
+        </button>
         {query ? (
           <button
             type="button"

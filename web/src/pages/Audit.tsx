@@ -12,9 +12,11 @@ export default function Audit() {
   return (
     <section>
       <h1>감사 로그</h1>
+      <p className="subtitle">운영자·에이전트 쓰기 액션 기록</p>
       {entries.length === 0 ? (
         <p className="muted">감사 기록이 없습니다.</p>
       ) : (
+        <div className="table-wrap">
         <table className="table">
           <thead>
             <tr>
@@ -35,6 +37,7 @@ export default function Audit() {
             ))}
           </tbody>
         </table>
+        </div>
       )}
     </section>
   )

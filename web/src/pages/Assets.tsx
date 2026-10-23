@@ -17,12 +17,14 @@ export default function Assets() {
   return (
     <section>
       <h1>자산</h1>
+      <p className="subtitle">관리 대상 시스템 목록과 점검 상태</p>
       {canWrite ? (
         <RegisterAssetForm onDone={() => qc.invalidateQueries({ queryKey: ['assets'] })} />
       ) : null}
       {assets.length === 0 ? (
         <p className="muted">등록된 자산이 없습니다.</p>
       ) : (
+        <div className="table-wrap">
         <table className="table">
           <thead>
             <tr>
@@ -49,6 +51,7 @@ export default function Assets() {
             ))}
           </tbody>
         </table>
+        </div>
       )}
     </section>
   )
@@ -97,7 +100,11 @@ function RegisterAssetForm({ onDone }: { onDone: () => void }) {
         value={role}
         onChange={(e) => setRole(e.target.value)}
       />
-      <button type="submit" disabled={m.isPending || !hostname.trim() || !os.trim()}>
+      <button
+        type="submit"
+        className="btn-primary"
+        disabled={m.isPending || !hostname.trim() || !os.trim()}
+      >
         자산 등록
       </button>
       {m.error ? <span className="error">{(m.error as Error).message}</span> : null}
