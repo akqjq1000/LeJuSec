@@ -16,6 +16,7 @@ def _to_out(item: CheckItem) -> CheckItemOut:
         title=item.title,
         severity=item.severity.value,
         rationale=item.rationale,
+        category=item.category,
     )
 
 

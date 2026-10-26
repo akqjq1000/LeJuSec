@@ -42,7 +42,11 @@ export default function Assets() {
                   <Link to={`/assets/${a.id}`}>{a.hostname}</Link>
                 </td>
                 <td>
-                  {a.os} {a.os_version}
+                  {a.os === 'pending' || a.os === '' ? (
+                    <span className="muted">자동 탐지 대기</span>
+                  ) : (
+                    `${a.os} ${a.os_version}`.trim()
+                  )}
                 </td>
                 <td>{a.managed ? '관리' : '-'}</td>
                 <td>{a.agent_status}</td>
@@ -59,16 +63,13 @@ export default function Assets() {
 
 function RegisterAssetForm({ onDone }: { onDone: () => void }) {
   const [hostname, setHostname] = useState('')
-  const [os, setOs] = useState('ubuntu')
-  const [osVersion, setOsVersion] = useState('')
   const [role, setRole] = useState('')
 
   const m = useMutation({
-    mutationFn: () =>
-      api.registerAsset({ hostname: hostname.trim(), os: os.trim(), os_version: osVersion.trim(), role: role.trim() }),
+    // OS는 입력받지 않는다 — 에이전트가 인벤토리를 보고할 때 자동 탐지된다.
+    mutationFn: () => api.registerAsset({ hostname: hostname.trim(), role: role.trim() }),
     onSuccess: () => {
       setHostname('')
-      setOsVersion('')
       setRole('')
       onDone()
     },
@@ -76,7 +77,7 @@ function RegisterAssetForm({ onDone }: { onDone: () => void }) {
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (hostname.trim() && os.trim()) m.mutate()
+    if (hostname.trim()) m.mutate()
   }
 
   return (
@@ -87,26 +88,16 @@ function RegisterAssetForm({ onDone }: { onDone: () => void }) {
         value={hostname}
         onChange={(e) => setHostname(e.target.value)}
       />
-      <input className="input sm" placeholder="OS *" value={os} onChange={(e) => setOs(e.target.value)} />
-      <input
-        className="input sm"
-        placeholder="OS 버전"
-        value={osVersion}
-        onChange={(e) => setOsVersion(e.target.value)}
-      />
       <input
         className="input sm"
         placeholder="역할"
         value={role}
         onChange={(e) => setRole(e.target.value)}
       />
-      <button
-        type="submit"
-        className="btn-primary"
-        disabled={m.isPending || !hostname.trim() || !os.trim()}
-      >
+      <button type="submit" className="btn-primary" disabled={m.isPending || !hostname.trim()}>
         자산 등록
       </button>
+      <span className="muted">OS는 에이전트 연결 시 자동 탐지됩니다</span>
       {m.error ? <span className="error">{(m.error as Error).message}</span> : null}
     </form>
   )

@@ -8,11 +8,12 @@ package collector
 
 // Inventory is a point-in-time snapshot collected from a host.
 type Inventory struct {
+	Host      Host      `json:"host"`
 	Packages  []Package `json:"packages"`
 	Processes []Process `json:"processes"`
 }
 
-// Collect gathers a full inventory snapshot.
+// Collect gathers a full inventory snapshot, including auto-detected OS info.
 func Collect() (Inventory, error) {
 	pkgs, err := Packages()
 	if err != nil {
@@ -22,5 +23,5 @@ func Collect() (Inventory, error) {
 	if err != nil {
 		return Inventory{}, err
 	}
-	return Inventory{Packages: pkgs, Processes: procs}, nil
+	return Inventory{Host: DetectHost(), Packages: pkgs, Processes: procs}, nil
 }

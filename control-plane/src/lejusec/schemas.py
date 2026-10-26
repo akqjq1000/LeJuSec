@@ -9,7 +9,8 @@ from lejusec.scanners import Finding
 
 class AssetCreate(BaseModel):
     hostname: str = Field(min_length=1, max_length=255)
-    os: str = Field(min_length=1, max_length=64)
+    # os는 선택값이다. 비우면 에이전트가 보고한 인벤토리에서 자동 탐지해 채운다.
+    os: str = Field(default="", max_length=64)
     os_version: str = Field(default="", max_length=64)
     role: str = Field(default="", max_length=64)
 
@@ -46,7 +47,17 @@ class ProcessIn(BaseModel):
     exe: str = ""
 
 
+class HostIn(BaseModel):
+    """에이전트가 자동 탐지한 운영체제 정보(인벤토리에 동봉)."""
+
+    os: str = ""
+    os_version: str = ""
+    family: str = ""
+    arch: str = ""
+
+
 class InventoryIn(BaseModel):
+    host: HostIn | None = None
     packages: list[PackageIn] = Field(default_factory=list)
     processes: list[ProcessIn] = Field(default_factory=list)
 
@@ -86,6 +97,7 @@ class CheckItemOut(BaseModel):
     title: str
     severity: str
     rationale: str
+    category: str = ""
 
 
 class CheckSearchHit(BaseModel):

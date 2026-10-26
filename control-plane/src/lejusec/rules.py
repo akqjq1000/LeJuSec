@@ -77,6 +77,9 @@ def evaluate(
     items = checklist if checklist is not None else load_checks()
     results: list[CheckResult] = []
     for item in items:
+        # RAG 전용 지식 항목(수동 점검)은 스캐너 연동이 없어 판정에서 제외한다.
+        if item.is_manual:
+            continue
         if item.rule_type == "vuln_absent":
             results.append(_eval_vuln_absent(item, findings))
         else:

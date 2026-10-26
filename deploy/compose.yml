@@ -1,0 +1,52 @@
+# LeJuSec 전체 스택을 한 번에 기동한다 (Postgres + 컨트롤 플레인 API + 웹 콘솔).
+#
+#   docker compose -f deploy/compose.yml up -d --build
+#   # 웹 콘솔:        http://localhost:8080
+#   # 컨트롤 플레인:  http://localhost:8000  (/healthz)
+#
+# 로컬 개발 편의용 구성이며 운영 배포 구성이 아니다(비밀값·TLS는 별도 주입 필요).
+# 의존 서비스만 필요하면 compose.dev.yml 을, 프로세스로 함께 띄우려면 `make dev` 를 쓴다.
+services:
+  postgres:
+    image: pgvector/pgvector:pg16   # 자산 CMDB + pgvector(벡터 검색) 겸용
+    environment:
+      POSTGRES_USER: lejusec
+      POSTGRES_PASSWORD: lejusec
+      POSTGRES_DB: lejusec
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lejusec"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  control-plane:
+    build:
+      context: ../control-plane
+    environment:
+      # 컨테이너 네트워크의 postgres 서비스에 연결(psycopg 드라이버)
+      LEJUSEC_DATABASE_URL: postgresql+psycopg://lejusec:lejusec@postgres:5432/lejusec
+      LEJUSEC_HOST: 0.0.0.0
+      LEJUSEC_PORT: "8000"
+      # 웹 콘솔(브라우저)이 다른 출처에서 호출하므로 CORS 허용 출처에 추가
+      LEJUSEC_CORS_ORIGINS: http://localhost:8080,http://127.0.0.1:8080,http://localhost:5173
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  web:
+    build:
+      context: ../web
+      args:
+        # 브라우저는 호스트에 퍼블리시된 컨트롤 플레인을 호출한다
+        VITE_API_BASE: http://localhost:8000
+    ports:
+      - "8080:80"
+    depends_on:
+      - control-plane
+
+volumes:
+  pgdata:

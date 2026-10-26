@@ -4,6 +4,10 @@ LeJuSec 대상 시스템 에이전트 — 단일 Go 바이너리.
 수집(패키지/프로세스/연관 파일) · 점검 실행 · FIM · self-protection.
 설계는 [../docs/design/features.md](../docs/design/features.md) 참고.
 
+인벤토리에는 자동 탐지한 OS 정보(`host`: Linux는 `/etc/os-release`의 `ID`/`VERSION_ID`,
+그 외는 `runtime.GOOS`/`GOARCH`)가 함께 담겨 전송된다. 컨트롤 플레인은 이 값으로 자산의
+`os`/`os_version`을 자동 채우므로, 운영자는 자산 등록 시 OS를 입력하지 않아도 된다.
+
 ## 개발
 
 ```bash
