@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import ConfirmModal from '../components/ConfirmModal'
-import { API_BASE, api, getToken, type Asset, type Remediation } from '../api'
+import { API_BASE, HEALTH_LABEL, api, getToken, type Asset, type Remediation } from '../api'
 
 type Tab = 'overview' | 'inventory' | 'checks' | 'integrity' | 'remediations'
 
@@ -50,11 +50,14 @@ export function AssetDetailView({ id }: { id: number }) {
 
 function Overview({ asset }: { asset: Asset }) {
   const rows: [string, string][] = [
+    ['주소(IP/도메인)', asset.address || '-'],
     ['호스트', asset.hostname],
     ['OS', `${asset.os} ${asset.os_version}`],
     ['역할', asset.role || '-'],
     ['그룹', asset.group || '-'],
     ['관리 여부', asset.managed ? '관리 중' : '미관리'],
+    ['헬스', `${HEALTH_LABEL[asset.health]}${asset.scan_paused ? ' · 점검 일시정지' : ''}`],
+    ['최근 확인', asset.last_seen_at ? new Date(asset.last_seen_at).toLocaleString() : '-'],
     ['에이전트 상태', asset.agent_status],
     ['공개키 등록', asset.public_key ? '예' : '아니오'],
     ['최근 점검', asset.last_scan_at ? new Date(asset.last_scan_at).toLocaleString() : '-'],

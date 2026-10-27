@@ -40,18 +40,19 @@ var defaultFIMPaths = []string{
 }
 
 type options struct {
-	server      string
-	assetID     int
-	keyPath     string
-	caCert      string
-	clientCert  string
-	clientKey   string
-	scanMode    bool
-	fimMode     bool
-	applyMode   bool
-	pollMode    bool
-	fimPathsRaw string
-	scanCfg     scan.Config
+	server        string
+	assetID       int
+	keyPath       string
+	caCert        string
+	clientCert    string
+	clientKey     string
+	scanMode      bool
+	fimMode       bool
+	applyMode     bool
+	pollMode      bool
+	heartbeatMode bool
+	fimPathsRaw   string
+	scanCfg       scan.Config
 }
 
 func (o options) fimPaths() []string {
@@ -81,6 +82,7 @@ func main() {
 	flag.BoolVar(&opts.fimMode, "fim", false, "compute a file-integrity manifest")
 	flag.BoolVar(&opts.applyMode, "apply", false, "pull approved remediations, apply them (with rollback), and report")
 	flag.BoolVar(&opts.pollMode, "poll", false, "pull queued server commands (e.g. scan), execute them, and report")
+	flag.BoolVar(&opts.heartbeatMode, "heartbeat", false, "send a lightweight liveness heartbeat and exit (used with --server)")
 	flag.StringVar(&opts.fimPathsRaw, "fim-paths", "", "comma-separated paths to monitor (default: critical config files)")
 	flag.StringVar(&opts.scanCfg.TrivyPath, "scan-path", "", "filesystem path for `trivy fs` (empty to skip)")
 	flag.StringVar(&opts.scanCfg.LynisReport, "lynis-report", "", "path to a lynis report .dat (empty to skip)")
@@ -111,6 +113,9 @@ func run(opts options) error {
 		}
 		if opts.pollMode {
 			return fmt.Errorf("--poll requires --server")
+		}
+		if opts.heartbeatMode {
+			return fmt.Errorf("--heartbeat requires --server")
 		}
 		payload, err := collect(opts)
 		if err != nil {
@@ -147,6 +152,12 @@ func collect(opts options) (any, error) {
 
 func send(api *client.Client, opts options, priv ed25519.PrivateKey) error {
 	switch {
+	case opts.heartbeatMode:
+		if err := api.Heartbeat(opts.assetID, priv); err != nil {
+			return err
+		}
+		fmt.Println("heartbeat sent")
+		return nil
 	case opts.pollMode:
 		return poll(api, opts, priv)
 	case opts.applyMode:

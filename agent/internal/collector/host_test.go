@@ -1,6 +1,7 @@
 package collector
 
 import (
+	"net"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -45,5 +46,13 @@ func TestDetectHostAlwaysPopulated(t *testing.T) {
 	// OS는 어떤 플랫폼에서도 비어 있지 않아야 한다(탐지 실패 시 GOOS로 폴백).
 	if host.OS == "" {
 		t.Error("OS should never be empty")
+	}
+	// hostname은 os.Hostname()으로 거의 항상 채워진다(서버가 자동 등록에 사용).
+	if host.Hostname == "" {
+		t.Error("Hostname should be populated")
+	}
+	// Address는 네트워크가 없는 환경에서 빈 값일 수 있으나, 있으면 파싱 가능한 IP여야 한다.
+	if host.Address != "" && net.ParseIP(host.Address) == nil {
+		t.Errorf("Address = %q, not a valid IP", host.Address)
 	}
 }

@@ -17,6 +17,9 @@ SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False
 # (table, column, DDL 타입/기본값). 운영은 정식 마이그레이션 도구로 대체.
 _COLUMN_MIGRATIONS = [
     ("assets", "asset_group", "VARCHAR(64) DEFAULT ''"),
+    ("assets", "address", "VARCHAR(255) DEFAULT ''"),
+    ("assets", "last_seen_at", "TIMESTAMP"),
+    ("assets", "scan_paused", "BOOLEAN DEFAULT 0"),
 ]
 
 

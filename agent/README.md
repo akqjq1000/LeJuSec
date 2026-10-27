@@ -36,8 +36,14 @@ curl -fsSL https://<컨트롤플레인>:8000/install.sh | sudo bash -s -- --toke
 
 스크립트가 수행하는 일: 에이전트 바이너리 내려받기(아키텍처 자동 판별)
 → `/usr/local/bin/lejusec-agent` 설치 → Ed25519 키 생성 → 자산 등록 → 공개키 등록
-→ 설정 생성 → 첫 인벤토리 전송 → systemd 타이머로 주기 실행 등록.
-멱등: 같은 호스트명이면 기존 자산을 재사용하고 공개키만 갱신한다.
+→ 설정 생성 → 첫 인벤토리 전송 → systemd 타이머 2개 등록(점검/인벤토리 + 헬스체크 하트비트).
+
+- **hostname 자동**: 등록 시 hostname을 보내지 않는다. 서버가 임시 식별자를 부여하고,
+  에이전트 첫 통신(인벤토리)에서 보고된 hostname/주소(IP)로 자동 교체한다
+  (`--hostname` 으로 명시 지정도 가능).
+- **헬스체크**: `lejusec-agent --heartbeat` 가 1분 주기(타이머)로 생존을 알려
+  컨트롤 플레인이 online/stale/offline 상태를 GUI에 표시한다
+  (`--heartbeat-interval`/`LEJUSEC_HEARTBEAT_INTERVAL` 로 주기 조정).
 
 > **바이너리 출처**: 설치 스크립트는 ① 컨트롤 플레인(`GET /agent/...`) → ② GitHub
 > 릴리스 순으로 내려받는다. 릴리스를 아직 발행하지 않은 자체 호스팅 환경에서는 서버에서

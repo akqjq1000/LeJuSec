@@ -20,7 +20,8 @@
 #   --binary-url URL     에이전트 바이너리 직접 지정(기본: GitHub 릴리스 자동)
 #   --agent-bin PATH     이미 있는 로컬 바이너리 사용(다운로드 생략)
 #   --ca-cert / --client-cert / --client-key   mTLS(세 값 함께)
-#   --poll-interval 15min   주기 실행 간격
+#   --poll-interval 15min   점검/인벤토리 주기
+#   --heartbeat-interval 1min   헬스체크 하트비트 주기
 #   --no-systemd         systemd 타이머 설치 생략(1회 등록만)
 #   --install-dir DIR    바이너리 설치 위치(기본 /usr/local/bin)
 #   --config-dir DIR     설정 위치(기본 /etc/lejusec)
@@ -34,7 +35,9 @@ DEFAULT_SERVER="@@DEFAULT_SERVER@@"
 case "$DEFAULT_SERVER" in *"@@"*) DEFAULT_SERVER="" ;; esac
 
 SERVER="${LEJUSEC_SERVER:-$DEFAULT_SERVER}"
-HOSTNAME_ARG="${LEJUSEC_HOSTNAME:-$(hostname)}"
+# hostname은 비워 두는 것이 기본 — 에이전트 첫 통신에서 서버가 자동으로 채운다.
+# 운영자가 명시하려면 --hostname 으로만 지정한다.
+HOSTNAME_ARG="${LEJUSEC_HOSTNAME:-}"
 GROUP="${LEJUSEC_GROUP:-}"
 ROLE="${LEJUSEC_ROLE:-}"
 OPERATOR_TOKEN="${LEJUSEC_OPERATOR_TOKEN:-}"
@@ -46,6 +49,7 @@ INSTALL_DIR="${LEJUSEC_INSTALL_DIR:-/usr/local/bin}"
 AGENT_BIN_SRC="${LEJUSEC_AGENT_BIN:-}"
 BINARY_URL="${LEJUSEC_BINARY_URL:-}"
 POLL_INTERVAL="${LEJUSEC_POLL_INTERVAL:-15min}"
+HEARTBEAT_INTERVAL="${LEJUSEC_HEARTBEAT_INTERVAL:-1min}"
 INSTALL_SYSTEMD=1
 
 die() { echo "install-agent: $*" >&2; exit 1; }
@@ -65,6 +69,7 @@ while [ $# -gt 0 ]; do
     --config-dir)    CONFIG_DIR="$2"; shift 2 ;;
     --install-dir)   INSTALL_DIR="$2"; shift 2 ;;
     --poll-interval) POLL_INTERVAL="$2"; shift 2 ;;
+    --heartbeat-interval) HEARTBEAT_INTERVAL="$2"; shift 2 ;;
     --no-systemd)    INSTALL_SYSTEMD=0; shift ;;
     -h|--help)       sed -n '3,40p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *)               die "알 수 없는 인자: $1 (--help 참고)" ;;
@@ -148,16 +153,23 @@ echo "▶ Ed25519 키 생성 → $KEY_PATH"
 PUBKEY="$("$AGENT_BIN" --keygen "$KEY_PATH" | tail -n1)"
 [ -n "$PUBKEY" ] || die "공개키 생성 실패."
 
-# ---- 3) 자산 등록 (멱등: 409 면 기존 자산 재사용) -------------------------------
-reg_body="$(printf '{"hostname":"%s","role":"%s","group":"%s"}' "$HOSTNAME_ARG" "$ROLE" "$GROUP")"
-echo "▶ 자산 등록 ($HOSTNAME_ARG)"
+# ---- 3) 자산 등록 -------------------------------------------------------------
+# hostname은 보내지 않는 것이 기본 — 서버가 임시 식별자를 부여하고, 첫 인벤토리에서
+# 에이전트가 보고한 hostname/주소로 자동 교체한다. --hostname 지정 시에만 명시 등록(409 재사용).
+if [ -n "$HOSTNAME_ARG" ]; then
+  reg_body="$(printf '{"hostname":"%s","role":"%s","group":"%s"}' "$HOSTNAME_ARG" "$ROLE" "$GROUP")"
+  echo "▶ 자산 등록 (hostname=$HOSTNAME_ARG)"
+else
+  reg_body="$(printf '{"role":"%s","group":"%s"}' "$ROLE" "$GROUP")"
+  echo "▶ 자산 등록 (hostname 자동 — 첫 통신에서 채워짐)"
+fi
 reg_out="$(mktemp)"
 reg_code="$(curl -sS -o "$reg_out" -w '%{http_code}' \
   -X POST "$SERVER/assets" -H 'Content-Type: application/json' \
   "${CURL_AUTH[@]}" "${CURL_TLS[@]}" -d "$reg_body" || true)"
 if [ "$reg_code" = "201" ]; then
   ASSET_ID="$(json_id < "$reg_out")"
-elif [ "$reg_code" = "409" ]; then
+elif [ "$reg_code" = "409" ] && [ -n "$HOSTNAME_ARG" ]; then
   echo "  이미 등록된 호스트명 — 기존 자산을 재사용합니다."
   ASSET_ID="$(curl -sS "$SERVER/assets" "${CURL_AUTH[@]}" "${CURL_TLS[@]}" \
     | { python3 -c 'import sys,json;h=sys.argv[1];print(next((a["id"] for a in json.load(sys.stdin) if a["hostname"]==h),""))' "$HOSTNAME_ARG" \
@@ -216,8 +228,9 @@ echo "▶ 첫 인벤토리 전송"
 "$RUN_SH"
 
 # ---- 7) systemd 타이머 (기본 설치) ---------------------------------------------
+# 두 개의 타이머: (a) 점검/인벤토리(주기 $POLL_INTERVAL), (b) 헬스체크 하트비트.
 if [ "$INSTALL_SYSTEMD" = "1" ] && command -v systemctl >/dev/null 2>&1; then
-  echo "▶ systemd 타이머 설치 (주기: $POLL_INTERVAL)"
+  echo "▶ systemd 타이머 설치 (점검 $POLL_INTERVAL · 하트비트 $HEARTBEAT_INTERVAL)"
   cat > /etc/systemd/system/lejusec-agent.service <<EOF
 [Unit]
 Description=LeJuSec agent — inventory + command poll
@@ -231,7 +244,7 @@ ExecStart=$RUN_SH --poll
 EOF
   cat > /etc/systemd/system/lejusec-agent.timer <<EOF
 [Unit]
-Description=LeJuSec agent 주기 실행
+Description=LeJuSec agent 주기 실행(점검/인벤토리)
 
 [Timer]
 OnBootSec=2min
@@ -241,9 +254,31 @@ Persistent=true
 [Install]
 WantedBy=timers.target
 EOF
+  cat > /etc/systemd/system/lejusec-agent-heartbeat.service <<EOF
+[Unit]
+Description=LeJuSec agent — liveness heartbeat
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=$RUN_SH --heartbeat
+EOF
+  cat > /etc/systemd/system/lejusec-agent-heartbeat.timer <<EOF
+[Unit]
+Description=LeJuSec agent 하트비트(헬스체크)
+
+[Timer]
+OnBootSec=30s
+OnUnitActiveSec=$HEARTBEAT_INTERVAL
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+EOF
   systemctl daemon-reload
-  systemctl enable --now lejusec-agent.timer
-  echo "  활성화됨: systemctl status lejusec-agent.timer"
+  systemctl enable --now lejusec-agent.timer lejusec-agent-heartbeat.timer
+  echo "  활성화됨: systemctl status lejusec-agent.timer lejusec-agent-heartbeat.timer"
 elif [ "$INSTALL_SYSTEMD" = "1" ]; then
   echo "install-agent: systemctl 이 없어 타이머 설치를 건너뜁니다." >&2
 fi

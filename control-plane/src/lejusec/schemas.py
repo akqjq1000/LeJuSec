@@ -8,7 +8,11 @@ from lejusec.scanners import Finding
 
 
 class AssetCreate(BaseModel):
-    hostname: str = Field(min_length=1, max_length=255)
+    # hostname은 선택값이다. 비우면 서버가 임시 식별자를 부여하고, 에이전트 첫 통신에서
+    # 실제 hostname/주소를 자동으로 채운다(운영자가 직접 입력하지 않아도 됨).
+    hostname: str = Field(default="", max_length=255)
+    # 네트워크 식별자(IP 또는 도메인). 비우면 에이전트 통신에서 자동 탐지한다.
+    address: str = Field(default="", max_length=255)
     # os는 선택값이다. 비우면 에이전트가 보고한 인벤토리에서 자동 탐지해 채운다.
     os: str = Field(default="", max_length=64)
     os_version: str = Field(default="", max_length=64)
@@ -21,6 +25,7 @@ class AssetRead(BaseModel):
 
     id: int
     hostname: str
+    address: str
     os: str
     os_version: str
     role: str
@@ -29,7 +34,32 @@ class AssetRead(BaseModel):
     agent_status: str
     public_key: str
     last_scan_at: dt.datetime | None
+    last_seen_at: dt.datetime | None
+    scan_paused: bool
+    # 파생 헬스 상태: online | stale | offline | unknown(한 번도 통신 없음)
+    health: str = "unknown"
     created_at: dt.datetime
+
+    @classmethod
+    def from_asset(cls, asset: object) -> "AssetRead":
+        """ORM 자산에서 AssetRead를 만들며 last_seen_at 기준 health를 계산한다."""
+        from lejusec.config import settings
+
+        read = cls.model_validate(asset)
+        seen = read.last_seen_at
+        if seen is None:
+            read.health = "unknown"
+        else:
+            if seen.tzinfo is None:
+                seen = seen.replace(tzinfo=dt.UTC)
+            age = (dt.datetime.now(dt.UTC) - seen).total_seconds()
+            if age <= settings.health_online_seconds:
+                read.health = "online"
+            elif age <= settings.health_stale_seconds:
+                read.health = "stale"
+            else:
+                read.health = "offline"
+        return read
 
 
 class KeyIn(BaseModel):
@@ -63,8 +93,10 @@ class ProcessIn(BaseModel):
 
 
 class HostIn(BaseModel):
-    """에이전트가 자동 탐지한 운영체제 정보(인벤토리에 동봉)."""
+    """에이전트가 자동 탐지한 호스트 정보(인벤토리에 동봉)."""
 
+    hostname: str = ""
+    address: str = ""
     os: str = ""
     os_version: str = ""
     family: str = ""
@@ -82,6 +114,13 @@ class InventoryAck(BaseModel):
     package_count: int
     process_count: int
     captured_at: dt.datetime
+
+
+class HeartbeatAck(BaseModel):
+    """경량 헬스체크 응답. 에이전트가 살아있음을 서버에 알린다."""
+
+    asset_id: int
+    seen_at: dt.datetime
 
 
 class ScanIn(BaseModel):

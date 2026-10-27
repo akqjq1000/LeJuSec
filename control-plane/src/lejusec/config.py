@@ -40,6 +40,10 @@ class Settings(BaseSettings):
     # dist/ 를 쓴다. `make agent-dist` 로 linux/amd64·arm64 바이너리를 여기에 만든다.
     agent_dist_dir: str = ""
 
+    # 헬스체크 임계값(초). 마지막 서명 통신(last_seen_at) 기준으로 online/stale/offline 판정.
+    health_online_seconds: int = 180
+    health_stale_seconds: int = 900
+
     # mTLS: 세 값이 모두 설정되면 상호 TLS(클라이언트 인증서 요구)로 기동한다.
     tls_certfile: str = ""
     tls_keyfile: str = ""

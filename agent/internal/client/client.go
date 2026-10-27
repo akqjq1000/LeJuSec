@@ -70,6 +70,12 @@ func (c *Client) SendInventory(assetID int, priv ed25519.PrivateKey, inv collect
 	return c.postSigned(fmt.Sprintf("/assets/%d/inventory", assetID), priv, body)
 }
 
+// Heartbeat signs and POSTs an empty body to the heartbeat endpoint so the
+// control plane can track liveness (last_seen_at) between fuller reports.
+func (c *Client) Heartbeat(assetID int, priv ed25519.PrivateKey) error {
+	return c.postSigned(fmt.Sprintf("/assets/%d/heartbeat", assetID), priv, []byte{})
+}
+
 // SendScan signs and POSTs normalized scanner findings for rule evaluation.
 func (c *Client) SendScan(assetID int, priv ed25519.PrivateKey, findings []scan.Finding) error {
 	body, err := json.Marshal(map[string][]scan.Finding{"findings": findings})

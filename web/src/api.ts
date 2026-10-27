@@ -84,6 +84,7 @@ export interface Summary {
 export interface Asset {
   id: number
   hostname: string
+  address: string
   os: string
   os_version: string
   role: string
@@ -92,7 +93,20 @@ export interface Asset {
   agent_status: string
   public_key: string
   last_scan_at: string | null
+  last_seen_at: string | null
+  scan_paused: boolean
+  health: AssetHealth
   created_at: string
+}
+
+/** 서버가 last_seen_at 기준으로 계산한 헬스 상태. */
+export type AssetHealth = 'online' | 'stale' | 'offline' | 'unknown'
+
+export const HEALTH_LABEL: Record<AssetHealth, string> = {
+  online: '정상',
+  stale: '지연',
+  offline: '응답 없음',
+  unknown: '미확인',
 }
 
 export interface InventorySummary {
@@ -214,7 +228,8 @@ export const api = {
   // 자산 등록 (G: 운영자 쓰기)
   // os/os_version은 선택값: 비우면 에이전트 인벤토리 보고 시 자동 탐지된다.
   registerAsset: (body: {
-    hostname: string
+    hostname?: string
+    address?: string
     os?: string
     os_version?: string
     role: string
@@ -228,6 +243,10 @@ export const api = {
   // 원격 검사 트리거 (서버→에이전트 명령 채널)
   scanRequests: (id: number) => get<Command[]>(`/assets/${id}/scan-requests`),
   requestScan: (id: number) => post<Command>(`/assets/${id}/scan-requests`),
+  cancelScan: (id: number, cmdId: number) =>
+    post<Command>(`/assets/${id}/scan-requests/${cmdId}/cancel`),
+  pauseScans: (id: number) => post<Asset>(`/assets/${id}/scans/pause`),
+  resumeScans: (id: number) => post<Asset>(`/assets/${id}/scans/resume`),
   // 자산 액션 (운영자 쓰기)
   setKey: (id: number, publicKey: string) =>
     put<Asset>(`/assets/${id}/key`, { public_key: publicKey }),
