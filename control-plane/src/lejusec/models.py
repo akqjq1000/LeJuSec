@@ -20,12 +20,27 @@ class Asset(Base):
     os: Mapped[str] = mapped_column(String(64))
     os_version: Mapped[str] = mapped_column(String(64), default="")
     role: Mapped[str] = mapped_column(String(64), default="")
+    # 자산 그룹(예: "운영-웹", "DB"). 빈 문자열이면 미분류.
+    # DB 컬럼명은 예약어 회피를 위해 asset_group 사용(속성명은 group).
+    group: Mapped[str] = mapped_column("asset_group", String(64), default="", index=True)
     # managed: 관리 시스템 지정(True)/해제(False)
     managed: Mapped[bool] = mapped_column(Boolean, default=False)
     agent_status: Mapped[str] = mapped_column(String(32), default="unknown")
     # 에이전트 Ed25519 공개키(base64). 인벤토리 서명 검증에 사용.
     public_key: Mapped[str] = mapped_column(String(128), default="")
     last_scan_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True), default=None)
+    created_at: Mapped[dt.datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+
+class AssetGroupRow(Base):
+    """자산 그룹 레지스트리. 자산이 없는 빈 그룹도 유지되도록 그룹명을 저장한다."""
+
+    __tablename__ = "asset_groups"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(64), unique=True, index=True)
     created_at: Mapped[dt.datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

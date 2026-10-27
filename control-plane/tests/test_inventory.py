@@ -49,6 +49,37 @@ def test_signed_inventory_ingest(client: TestClient) -> None:
     assert asset["agent_status"] == "reporting"
 
 
+def test_os_auto_detected_from_inventory(client: TestClient) -> None:
+    # OS 없이 등록하면 pending 상태가 된다.
+    resp = client.post("/assets", json={"hostname": "auto-01"})
+    assert resp.status_code == 201, resp.text
+    asset_id = resp.json()["id"]
+    assert resp.json()["os"] == "pending"
+
+    priv, pub_b64 = _keypair()
+    client.put(f"/assets/{asset_id}/key", json={"public_key": pub_b64})
+
+    # 에이전트 인벤토리에 동봉된 host 정보로 OS가 자동 탐지되어야 한다.
+    body = json.dumps(
+        {
+            "host": {"os": "ubuntu", "os_version": "24.04", "family": "linux", "arch": "amd64"},
+            "packages": [],
+            "processes": [],
+        }
+    ).encode()
+    signature = base64.b64encode(priv.sign(body)).decode()
+    resp = client.post(
+        f"/assets/{asset_id}/inventory",
+        content=body,
+        headers={"X-Signature": signature, "Content-Type": "application/json"},
+    )
+    assert resp.status_code == 201, resp.text
+
+    asset = client.get(f"/assets/{asset_id}").json()
+    assert asset["os"] == "ubuntu"
+    assert asset["os_version"] == "24.04"
+
+
 def test_tampered_body_rejected(client: TestClient) -> None:
     asset_id = _register(client, "sig-02")
     priv, pub_b64 = _keypair()

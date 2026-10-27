@@ -9,9 +9,11 @@ from lejusec.scanners import Finding
 
 class AssetCreate(BaseModel):
     hostname: str = Field(min_length=1, max_length=255)
-    os: str = Field(min_length=1, max_length=64)
+    # os는 선택값이다. 비우면 에이전트가 보고한 인벤토리에서 자동 탐지해 채운다.
+    os: str = Field(default="", max_length=64)
     os_version: str = Field(default="", max_length=64)
     role: str = Field(default="", max_length=64)
+    group: str = Field(default="", max_length=64)
 
 
 class AssetRead(BaseModel):
@@ -22,6 +24,7 @@ class AssetRead(BaseModel):
     os: str
     os_version: str
     role: str
+    group: str
     managed: bool
     agent_status: str
     public_key: str
@@ -32,6 +35,19 @@ class AssetRead(BaseModel):
 class KeyIn(BaseModel):
     # Ed25519 공개키 (base64, 32바이트 → 44자)
     public_key: str = Field(min_length=1, max_length=128)
+
+
+class GroupIn(BaseModel):
+    # 자산 그룹명. 빈 문자열이면 그룹 해제(미분류).
+    group: str = Field(default="", max_length=64)
+
+
+class GroupCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=64)
+
+
+class GroupName(BaseModel):
+    name: str
 
 
 class PackageIn(BaseModel):
@@ -46,7 +62,17 @@ class ProcessIn(BaseModel):
     exe: str = ""
 
 
+class HostIn(BaseModel):
+    """에이전트가 자동 탐지한 운영체제 정보(인벤토리에 동봉)."""
+
+    os: str = ""
+    os_version: str = ""
+    family: str = ""
+    arch: str = ""
+
+
 class InventoryIn(BaseModel):
+    host: HostIn | None = None
     packages: list[PackageIn] = Field(default_factory=list)
     processes: list[ProcessIn] = Field(default_factory=list)
 
@@ -86,6 +112,18 @@ class CheckItemOut(BaseModel):
     title: str
     severity: str
     rationale: str
+    category: str = ""
+    # 상세 표시용(점검 기준 항목 클릭 시 전체 내용). 수동 항목은 tool/fix가 비어 있다.
+    tool: str = ""
+    rule_type: str = ""
+    fix: str = ""
+    rollback: str = ""
+    # KISA 상세가이드 본문(항목 상세)
+    purpose: str = ""
+    threat: str = ""
+    criteria: str = ""
+    target: str = ""
+    reference: str = ""
 
 
 class CheckSearchHit(BaseModel):

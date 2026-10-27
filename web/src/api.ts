@@ -87,6 +87,7 @@ export interface Asset {
   os: string
   os_version: string
   role: string
+  group: string
   managed: boolean
   agent_status: string
   public_key: string
@@ -148,6 +149,32 @@ export interface CheckItem {
   title: string
   severity: string
   rationale: string
+  category: string
+  tool: string
+  rule_type: string
+  fix: string
+  rollback: string
+  // KISA 상세가이드 본문(항목 상세)
+  purpose: string
+  threat: string
+  criteria: string
+  target: string
+  reference: string
+}
+
+/** 자산의 에이전트 연결 상태 (public_key/last_scan_at로 도출). */
+export type AgentState = 'connected' | 'pending' | 'unregistered'
+
+export function agentState(a: Asset): AgentState {
+  if (!a.public_key) return 'unregistered'
+  if (!a.last_scan_at) return 'pending'
+  return 'connected'
+}
+
+export const AGENT_STATE_LABEL: Record<AgentState, string> = {
+  connected: '에이전트 연결됨',
+  pending: '에이전트 등록·대기',
+  unregistered: '수동 등록(미연결)',
 }
 
 export interface CheckHit {
@@ -185,8 +212,19 @@ export const api = {
   assets: () => get<Asset[]>('/assets'),
   asset: (id: number) => get<Asset>(`/assets/${id}`),
   // 자산 등록 (G: 운영자 쓰기)
-  registerAsset: (body: { hostname: string; os: string; os_version: string; role: string }) =>
-    post<Asset>('/assets', body),
+  // os/os_version은 선택값: 비우면 에이전트 인벤토리 보고 시 자동 탐지된다.
+  registerAsset: (body: {
+    hostname: string
+    os?: string
+    os_version?: string
+    role: string
+    group?: string
+  }) => post<Asset>('/assets', body),
+  // 자산 그룹
+  assetGroups: () => get<string[]>('/asset-groups'),
+  createGroup: (name: string) => post<{ name: string }>('/asset-groups', { name }),
+  deleteGroup: (name: string) => del(`/asset-groups/${encodeURIComponent(name)}`),
+  setGroup: (id: number, group: string) => put<Asset>(`/assets/${id}/group`, { group }),
   // 원격 검사 트리거 (서버→에이전트 명령 채널)
   scanRequests: (id: number) => get<Command[]>(`/assets/${id}/scan-requests`),
   requestScan: (id: number) => post<Command>(`/assets/${id}/scan-requests`),

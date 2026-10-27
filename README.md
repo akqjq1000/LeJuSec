@@ -34,6 +34,17 @@ LLM은 **도구 선택 · 조치안 생성 · 맥락 판단 · 근거 제시**�
 
 자세한 설계는 [docs/design/overview.md](docs/design/overview.md)를 참고하세요.
 
+### 점검 기준 지식베이스 (RAG 코퍼스)
+
+RAG 근거 검색 코퍼스는 두 파일을 병합해 구성한다
+([control-plane/src/lejusec/knowledge/](control-plane/src/lejusec/knowledge/)).
+
+- `checks.json` — 스캐너(OpenSCAP/Lynis/Trivy)와 연동되는 자동 판정 점검
+- `kisa_unix.json` — KISA『주요정보통신기반시설 기술적 취약점 분석·평가 방법 상세가이드』의
+  **Unix 부분 전체(U-01~U-67, 계정·파일/디렉터리·서비스·패치·로그 관리)**를 RAG 근거로 등록한
+  지식 항목. 스캐너 연동이 없는 수동 점검(`rule_type: "manual"`)이라 룰 엔진 판정에는 포함되지
+  않고 `/checks/search`(RAG) 검색에만 쓰인다.
+
 ## 아키텍처
 
 ```
@@ -80,6 +91,26 @@ LeJuSec/
 
 ## 시스템 구동 방법
 
+### 0. 한 번에 실행 (권장 · 개발용)
+
+컨트롤 플레인(API)과 웹 콘솔을 한 번에 띄운다. 두 프로세스의 로그가 `[cp]`/`[web]`
+접두어로 합쳐져 출력되고, `Ctrl+C` 한 번으로 전부 종료된다.
+
+```bash
+make dev                 # = python scripts/dev.py
+# 옵션:
+python scripts/dev.py --tls      # 컨트롤 플레인을 mTLS로 (certs/ 필요)
+python scripts/dev.py --no-web   # 컨트롤 플레인만
+python scripts/dev.py --no-cp    # 웹 콘솔만
+```
+
+> 전제: `make cp-install`(컨트롤 플레인)과 `cd web && npm install`(웹)로 의존성을
+> 설치해 둔다. 컨트롤 플레인은 `control-plane/.venv`가 있으면 그 파이썬을 사용한다.
+
+컨테이너로 전체 스택(DB+API+웹)을 한 번에 띄우려면 아래 [Docker Compose](#6-docker-compose-전체-스택) 참고.
+
+아래 1~4는 각 구성요소를 개별 실행하는 방법이다.
+
 ### 1. 컨트롤 플레인 (API)
 
 ```bash
@@ -113,8 +144,10 @@ go build -o lejusec-agent ./cmd/agent
 ./lejusec-agent --keygen agent.key
 
 # (2) 자산 등록 + 공개키 등록 (운영자/API)
+#     OS는 입력하지 않아도 된다 — 에이전트가 인벤토리를 보고할 때 자동 탐지된다.
+#     (등록 직후에는 os="pending" 상태이며, 첫 인벤토리 수신 시 ubuntu/24.04 등으로 채워진다.)
 curl -X POST http://127.0.0.1:8000/assets \
-  -H 'Content-Type: application/json' -d '{"hostname":"host-01","os":"ubuntu"}'
+  -H 'Content-Type: application/json' -d '{"hostname":"host-01"}'
 curl -X PUT http://127.0.0.1:8000/assets/1/key \
   -H 'Content-Type: application/json' -d '{"public_key":"<공개키>"}'
 
@@ -144,9 +177,24 @@ LEJUSEC_TLS_CA_CERTS=../certs/ca.crt python -m lejusec.server
 ### 5. (선택) 의존 서비스 · 단축 명령
 
 ```bash
-docker compose -f deploy/compose.dev.yml up -d   # Postgres/pgvector, Qdrant
-make help                                        # cp-run / cp-run-tls / certs / up / down
+docker compose -f deploy/compose.dev.yml up -d   # Postgres/pgvector, Qdrant (의존 서비스만)
+make help                                        # dev / cp-run / certs / up / stack-up ...
 ```
+
+### 6. Docker Compose (전체 스택)
+
+Postgres + 컨트롤 플레인 + 웹 콘솔을 컨테이너로 한 번에 띄운다.
+
+```bash
+docker compose -f deploy/compose.yml up -d --build   # = make stack-up
+# 웹 콘솔:        http://localhost:8080
+# 컨트롤 플레인:  http://localhost:8000  (/healthz)
+docker compose -f deploy/compose.yml down            # = make stack-down
+```
+
+> 웹 이미지는 빌드 타임에 `VITE_API_BASE`(기본 `http://localhost:8000`)로 API 주소를
+> 주입하고, 컨트롤 플레인은 `compose.dev.yml`과 달리 Postgres에 연결된다. 로컬 개발
+> 편의용 구성이며 비밀값·TLS는 운영 시 별도 주입해야 한다.
 
 전체 운영 흐름: **자산 등록 → 에이전트 수집·점검 → 룰 엔진 판정 → 조치 생성·검증·승인(HITL) → 무결성 모니터링**. 운영자 콘솔(웹)에서 한눈에 확인·승인한다.
 상세 개발 절차는 [docs/development/getting-started.md](docs/development/getting-started.md) 참고.

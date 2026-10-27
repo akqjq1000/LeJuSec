@@ -1,4 +1,5 @@
-.PHONY: help cp-install cp-lint cp-test agent-build agent-test up down certs cp-run cp-run-tls
+.PHONY: help cp-install cp-lint cp-test agent-build agent-test up down certs cp-run cp-run-tls \
+	dev dev-tls stack-up stack-down stack-build
 
 help:
 	@echo "cp-install   컨트롤 플레인 의존성 설치"
@@ -10,6 +11,11 @@ help:
 	@echo "certs        개발용 mTLS 인증서 생성 (certs/)"
 	@echo "cp-run       컨트롤 플레인 평문 HTTP 기동"
 	@echo "cp-run-tls   컨트롤 플레인 mTLS 기동 (certs/ 필요)"
+	@echo "dev          컨트롤 플레인 + 웹 콘솔 한 번에 실행"
+	@echo "dev-tls      dev + 컨트롤 플레인 mTLS (certs/ 필요)"
+	@echo "stack-up     전체 스택(DB+API+웹) 컨테이너 기동 (docker compose)"
+	@echo "stack-down   전체 스택 컨테이너 중지"
+	@echo "stack-build  전체 스택 이미지 빌드"
 
 cp-install:
 	cd control-plane && pip install -e ".[dev]"
@@ -43,3 +49,20 @@ cp-run-tls:
 	cd control-plane && LEJUSEC_TLS_CERTFILE=../certs/server.crt \
 	  LEJUSEC_TLS_KEYFILE=../certs/server.key \
 	  LEJUSEC_TLS_CA_CERTS=../certs/ca.crt python -m lejusec.server
+
+# 컨트롤 플레인 + 웹 콘솔을 한 번에 실행 (Ctrl+C로 전체 종료)
+dev:
+	python scripts/dev.py
+
+dev-tls:
+	python scripts/dev.py --tls
+
+# 전체 스택(Postgres + 컨트롤 플레인 + 웹)을 컨테이너로 기동/중지/빌드
+stack-up:
+	docker compose -f deploy/compose.yml up -d --build
+
+stack-down:
+	docker compose -f deploy/compose.yml down
+
+stack-build:
+	docker compose -f deploy/compose.yml build

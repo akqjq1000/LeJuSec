@@ -18,6 +18,7 @@ from lejusec.models import Asset, InventorySnapshot
 from lejusec.schemas import (
     AssetCreate,
     AssetRead,
+    GroupIn,
     InventoryAck,
     InventoryIn,
     InventorySummaryOut,
@@ -36,7 +37,11 @@ def register_asset(payload: AssetCreate, session: SessionDep, actor: Actor) -> A
     exists = session.scalar(select(Asset).where(Asset.hostname == payload.hostname))
     if exists is not None:
         raise HTTPException(status.HTTP_409_CONFLICT, detail="hostname already registered")
-    asset = Asset(**payload.model_dump())
+    data = payload.model_dump()
+    # OS를 입력하지 않으면 "pending"으로 두고, 에이전트 인벤토리에서 자동 탐지해 채운다.
+    if not data.get("os"):
+        data["os"] = "pending"
+    asset = Asset(**data)
     session.add(asset)
     record_audit(session, actor, "asset.register", payload.hostname)
     session.commit()
@@ -50,9 +55,27 @@ def list_assets(session: SessionDep) -> list[AssetRead]:
     return [AssetRead.model_validate(a) for a in assets]
 
 
+@router.get("/groups", response_model=list[str])
+def list_groups(session: SessionDep) -> list[str]:
+    """등록된 자산 그룹명 목록(중복 제거, 빈 값 제외). 그룹 선택 UI용."""
+    rows = session.scalars(select(Asset.group).where(Asset.group != "").distinct()).all()
+    return sorted(rows)
+
+
 @router.get("/{asset_id}", response_model=AssetRead)
 def get_asset(asset_id: int, session: SessionDep) -> AssetRead:
     return AssetRead.model_validate(get_or_404(session, asset_id))
+
+
+@router.put("/{asset_id}/group", response_model=AssetRead)
+def set_group(asset_id: int, payload: GroupIn, session: SessionDep, actor: Actor) -> AssetRead:
+    """기존 자산의 그룹을 지정/변경한다(빈 값이면 그룹 해제)."""
+    asset = get_or_404(session, asset_id)
+    asset.group = payload.group.strip()
+    record_audit(session, actor, "asset.group", f"{asset_id}:{asset.group or '-'}")
+    session.commit()
+    session.refresh(asset)
+    return AssetRead.model_validate(asset)
 
 
 @router.post("/{asset_id}/manage", response_model=AssetRead)
@@ -104,6 +127,12 @@ async def ingest_inventory(asset_id: int, request: Request, session: SessionDep)
     )
     asset.last_scan_at = dt.datetime.now(dt.UTC)
     asset.agent_status = "reporting"
+    # OS 자동 탐지: 에이전트가 보고한 호스트 정보로 자산의 os/os_version을 갱신한다.
+    # (운영자가 등록 시 OS를 입력하지 않아도 되도록, 에이전트 보고를 신뢰 소스로 쓴다.)
+    if inv.host is not None and inv.host.os:
+        asset.os = inv.host.os[:64]
+        if inv.host.os_version:
+            asset.os_version = inv.host.os_version[:64]
     session.add(snapshot)
     session.commit()
     session.refresh(snapshot)

@@ -17,7 +17,11 @@ const TABS: [Tab, string][] = [
 
 export default function AssetDetail() {
   const params = useParams()
-  const id = Number(params.id)
+  return <AssetDetailView id={Number(params.id)} />
+}
+
+/** 자산 상세 내용. 라우트(/assets/:id)와 자산 탭의 2열 레이아웃에서 공용. */
+export function AssetDetailView({ id }: { id: number }) {
   const [tab, setTab] = useState<Tab>('overview')
   const asset = useQuery({ queryKey: ['asset', id], queryFn: () => api.asset(id) })
 
@@ -26,7 +30,7 @@ export default function AssetDetail() {
   if (!asset.data) return null
 
   return (
-    <section>
+    <div>
       <h1>{asset.data.hostname}</h1>
       <nav className="tabs">
         {TABS.map(([t, label]) => (
@@ -40,7 +44,7 @@ export default function AssetDetail() {
       {tab === 'checks' && <Checks id={id} />}
       {tab === 'integrity' && <Integrity id={id} />}
       {tab === 'remediations' && <Remediations id={id} />}
-    </section>
+    </div>
   )
 }
 
@@ -49,6 +53,7 @@ function Overview({ asset }: { asset: Asset }) {
     ['호스트', asset.hostname],
     ['OS', `${asset.os} ${asset.os_version}`],
     ['역할', asset.role || '-'],
+    ['그룹', asset.group || '-'],
     ['관리 여부', asset.managed ? '관리 중' : '미관리'],
     ['에이전트 상태', asset.agent_status],
     ['공개키 등록', asset.public_key ? '예' : '아니오'],
@@ -115,6 +120,21 @@ function AssetActions({ asset }: { asset: Asset }) {
   return (
     <div>
       <div className="section-title">공개키</div>
+      <div className="hint">
+        <strong>공개키 배포 가이드</strong>
+        <ol>
+          <li>
+            대상 시스템에서 에이전트 키 생성:
+            <code>lejusec-agent --keygen agent.key</code> → 출력된 <em>공개키</em>를 복사
+          </li>
+          <li>아래 입력란에 공개키(base64)를 붙여넣고 등록</li>
+          <li>
+            에이전트 실행 시 개인키로 서명 전송:
+            <code>lejusec-agent --server &lt;URL&gt; --asset-id {asset.id} --key agent.key</code>
+          </li>
+        </ol>
+        <span className="muted">개인키(agent.key)는 대상 시스템에만 보관하고 서버로 전송하지 않습니다.</span>
+      </div>
       <div className="toolbar">
         <input
           className="input"
