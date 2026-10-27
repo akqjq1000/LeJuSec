@@ -202,9 +202,13 @@ type Config struct {
 	OpenSCAPResults string // path to an OpenSCAP XCCDF results XML ("" to skip)
 }
 
-// Collect runs/reads the configured scanners and aggregates findings.
+// Collect runs/reads the configured scanners and aggregates findings. The
+// KISA Unix checks always run (no external tool required); the Trivy/Lynis/
+// OpenSCAP scanners run only when configured.
 func Collect(cfg Config) ([]Finding, error) {
 	findings := make([]Finding, 0)
+
+	findings = append(findings, CollectKISA()...)
 
 	if cfg.TrivyPath != "" {
 		trivy, err := runTrivyFS(cfg.TrivyPath)

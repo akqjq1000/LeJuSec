@@ -10,7 +10,10 @@
     "threat": "root 직접 원격 접속을 허용하면 무차별 대입·사전 공격의 표적이 되고, 탈취 시 시스템 전체가 즉시 장악된다.",
     "criteria": "양호: 원격 접속 시 root 직접 로그인이 제한됨(PermitRootLogin no, 콘솔만 허용). 취약: root로 원격 직접 로그인 가능.",
     "target": "SOLARIS, LINUX, AIX, HP-UX",
-    "reference": "/etc/ssh/sshd_config(PermitRootLogin), /etc/securetty, /etc/default/login(CONSOLE)"
+    "reference": "/etc/ssh/sshd_config(PermitRootLogin), /etc/securetty, /etc/default/login(CONSOLE)",
+    "rule_type": "config",
+    "tool": "kisa",
+    "match": "KISA-U-01"
   },
   {
     "id": "KISA-U-02",
@@ -62,7 +65,10 @@
     "threat": "UID 0 계정은 root와 동일한 최고 권한을 가져 권한 우회·관리 분산을 유발한다.",
     "criteria": "양호: UID 0 계정이 root뿐임. 취약: root 외 계정에 UID 0 존재.",
     "target": "SOLARIS, LINUX, AIX, HP-UX",
-    "reference": "/etc/passwd, usermod"
+    "reference": "/etc/passwd, usermod",
+    "rule_type": "config",
+    "tool": "kisa",
+    "match": "KISA-U-05"
   },
   {
     "id": "KISA-U-06",
@@ -153,7 +159,10 @@
     "threat": "유휴 세션이 장시간 유지되면 자리 비운 사이 세션 탈취 위험이 있다.",
     "criteria": "양호: 세션 타임아웃(TMOUT 등) 설정됨. 취약: 유휴 세션 제한 없음.",
     "target": "SOLARIS, LINUX, AIX, HP-UX",
-    "reference": "/etc/profile(TMOUT), /etc/csh.cshrc(autologout)"
+    "reference": "/etc/profile(TMOUT), /etc/csh.cshrc(autologout)",
+    "rule_type": "config",
+    "tool": "kisa",
+    "match": "KISA-U-12"
   },
   {
     "id": "KISA-U-13",
@@ -166,7 +175,10 @@
     "threat": "MD5/DES 등 취약 해시는 유출 시 평문 복원이 쉽다.",
     "criteria": "양호: SHA-256/512 등 강한 해시 사용. 취약: 취약한 해시 알고리즘 사용.",
     "target": "SOLARIS, LINUX, AIX, HP-UX",
-    "reference": "/etc/login.defs(ENCRYPT_METHOD), /etc/security/policy.conf(CRYPT_DEFAULT)"
+    "reference": "/etc/login.defs(ENCRYPT_METHOD), /etc/security/policy.conf(CRYPT_DEFAULT)",
+    "rule_type": "config",
+    "tool": "kisa",
+    "match": "KISA-U-13"
   },
   {
     "id": "KISA-U-14",
@@ -205,7 +217,10 @@
     "threat": "일반 사용자가 /etc/passwd를 수정하면 계정·UID·쉘 변조로 권한 상승이 가능하다.",
     "criteria": "양호: 소유자 root, 권한 644 이하. 취약: 일반 사용자 쓰기 가능.",
     "target": "SOLARIS, LINUX, AIX, HP-UX",
-    "reference": "/etc/passwd (root:root, 644)"
+    "reference": "/etc/passwd (root:root, 644)",
+    "rule_type": "config",
+    "tool": "kisa",
+    "match": "KISA-U-16"
   },
   {
     "id": "KISA-U-17",
@@ -231,7 +246,10 @@
     "threat": "shadow가 노출되면 암호화 패스워드가 오프라인 크래킹 대상이 된다.",
     "criteria": "양호: 소유자 root, 권한 400/600. 취약: 일반 사용자 읽기 가능.",
     "target": "SOLARIS, LINUX, AIX, HP-UX",
-    "reference": "/etc/shadow (root:root, 400)"
+    "reference": "/etc/shadow (root:root, 400)",
+    "rule_type": "config",
+    "tool": "kisa",
+    "match": "KISA-U-18"
   },
   {
     "id": "KISA-U-19",
@@ -244,7 +262,10 @@
     "threat": "hosts 변조 시 도메인-IP 매핑이 조작되어 파밍·접속 우회에 악용된다.",
     "criteria": "양호: 소유자 root, 권한 600. 취약: 일반 사용자 쓰기 가능.",
     "target": "SOLARIS, LINUX, AIX, HP-UX",
-    "reference": "/etc/hosts (root:root, 600)"
+    "reference": "/etc/hosts (root:root, 600)",
+    "rule_type": "config",
+    "tool": "kisa",
+    "match": "KISA-U-19"
   },
   {
     "id": "KISA-U-20",
@@ -270,7 +291,10 @@
     "threat": "로그 설정이 변조되면 보안 로그가 누락·위조되어 침해 추적이 불가능해진다.",
     "criteria": "양호: 소유자 root(또는 bin/sys), 권한 640 이하. 취약: 변조 가능 권한.",
     "target": "SOLARIS, LINUX, AIX, HP-UX",
-    "reference": "/etc/syslog.conf, /etc/rsyslog.conf"
+    "reference": "/etc/syslog.conf, /etc/rsyslog.conf",
+    "rule_type": "config",
+    "tool": "kisa",
+    "match": "KISA-U-21"
   },
   {
     "id": "KISA-U-22",
@@ -283,7 +307,10 @@
     "threat": "변조 시 서비스-포트 매핑이 조작될 수 있다.",
     "criteria": "양호: 소유자 root(또는 bin/sys), 권한 644 이하. 취약: 일반 사용자 쓰기 가능.",
     "target": "SOLARIS, LINUX, AIX, HP-UX",
-    "reference": "/etc/services"
+    "reference": "/etc/services",
+    "rule_type": "config",
+    "tool": "kisa",
+    "match": "KISA-U-22"
   },
   {
     "id": "KISA-U-23",
@@ -478,7 +505,10 @@
     "threat": "과도한 권한이면 일반 사용자가 예약 작업으로 권한 상승을 시도할 수 있다.",
     "criteria": "양호: 소유자 root·권한 640 이하, cron.allow로 통제. 취약: 느슨한 권한/통제 없음.",
     "target": "SOLARIS, LINUX, AIX, HP-UX",
-    "reference": "/etc/cron.allow, /etc/cron.deny, crontab"
+    "reference": "/etc/cron.allow, /etc/cron.deny, crontab",
+    "rule_type": "config",
+    "tool": "kisa",
+    "match": "KISA-U-37"
   },
   {
     "id": "KISA-U-38",
