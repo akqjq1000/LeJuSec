@@ -93,9 +93,9 @@ func TestCollectFromFiles(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// 2 lynis + 3 openscap
-	if len(findings) != 5 {
-		t.Fatalf("want 5 findings, got %d", len(findings))
+	// 스캐너 finding만 집계(Collect는 KISA 점검도 항상 포함). 2 lynis + 3 openscap.
+	if n := countExcludingTool(findings, "kisa"); n != 5 {
+		t.Fatalf("want 5 scanner findings, got %d", n)
 	}
 }
 
@@ -104,7 +104,19 @@ func TestCollectEmpty(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(findings) != 0 {
-		t.Fatalf("want 0, got %d", len(findings))
+	// 스캐너 설정이 없으면 스캐너 finding은 0건(KISA 점검 finding은 별도로 존재).
+	if n := countExcludingTool(findings, "kisa"); n != 0 {
+		t.Fatalf("want 0 scanner findings, got %d", n)
 	}
+}
+
+// countExcludingTool returns how many findings are not from the given tool.
+func countExcludingTool(findings []Finding, tool string) int {
+	n := 0
+	for _, f := range findings {
+		if f.Tool != tool {
+			n++
+		}
+	}
+	return n
 }
