@@ -17,6 +17,9 @@ class Asset(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     hostname: Mapped[str] = mapped_column(String(255), unique=True, index=True)
+    # 네트워크 식별자(IP 또는 도메인). 등록 시 비워 두면 에이전트 첫 통신에서 자동으로
+    # 채워지고, 서버가 요청 소스 IP를 폴백으로 기록한다.
+    address: Mapped[str] = mapped_column(String(255), default="", index=True)
     os: Mapped[str] = mapped_column(String(64))
     os_version: Mapped[str] = mapped_column(String(64), default="")
     role: Mapped[str] = mapped_column(String(64), default="")
@@ -29,6 +32,10 @@ class Asset(Base):
     # 에이전트 Ed25519 공개키(base64). 인벤토리 서명 검증에 사용.
     public_key: Mapped[str] = mapped_column(String(128), default="")
     last_scan_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True), default=None)
+    # 에이전트의 마지막 서명 통신 시각(헬스체크용). 모든 서명 요청에서 갱신된다.
+    last_seen_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True), default=None)
+    # 점검 일시정지 게이트. True면 이 자산에 대기 중인 scan 명령을 pull에서 보류한다.
+    scan_paused: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[dt.datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
@@ -137,8 +144,9 @@ class AgentCommandRow(Base):
     """서버→에이전트 명령(폴링 채널) 1건.
 
     상태기계: pending → claimed(에이전트가 pull) → done|failed(에이전트가 report).
+    운영자가 대기/claimed 명령을 canceled로 돌릴 수 있다(취소).
     에이전트는 서명된 pull/report로만 접근하며(운영자 토큰 면제), 운영자는
-    scan-requests 엔드포인트로 생성/조회한다.
+    scan-requests 엔드포인트로 생성/조회/취소한다.
     """
 
     __tablename__ = "agent_commands"

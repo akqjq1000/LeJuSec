@@ -1,5 +1,7 @@
 """API 공통 헬퍼: 자산 조회와 서명 본문 검증."""
 
+import datetime as dt
+
 from fastapi import HTTPException, Request, status
 from sqlalchemy.orm import Session
 
@@ -22,4 +24,14 @@ async def read_signed_body(asset: Asset, request: Request) -> bytes:
     raw = await request.body()
     if not signature or not verify_ed25519(asset.public_key, raw, signature):
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, detail="invalid or missing signature")
+    # 서명이 검증된 모든 요청에서 헬스체크용 마지막 통신 시각을 갱신한다(커밋은 호출자).
+    asset.last_seen_at = dt.datetime.now(dt.UTC)
     return raw
+
+
+def client_ip(request: Request) -> str:
+    """요청 소스 IP(프록시의 X-Forwarded-For 우선). 주소 자동 기록 폴백용."""
+    fwd = request.headers.get("x-forwarded-for", "")
+    if fwd:
+        return fwd.split(",")[0].strip()
+    return request.client.host if request.client else ""

@@ -832,6 +832,24 @@ button:disabled {
 .dot.off {
   background: var(--border-strong);
 }
+/* 점검 탭: 행 내 보조 텍스트(호스트명/최근 확인) */
+.sub {
+  font-size: 0.8em;
+  margin-top: 2px;
+}
+/* 점검 탭: 검사 제어 버튼 묶음 */
+.row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+/* 헬스 배지 안의 점 정렬 */
+.badge .dot {
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 4px;
+}
 .asset-detail-pane {
   min-width: 0;
   background: var(--panel);

@@ -1,15 +1,19 @@
 package collector
 
 import (
+	"net"
 	"os"
 	"runtime"
 	"strings"
 )
 
-// Host describes the detected operating system of the target. It is collected
-// automatically so operators never type the OS when registering an asset; the
-// control plane fills the asset's os/os_version from the signed inventory.
+// Host describes the detected identity of the target (OS, hostname, address).
+// It is collected automatically so operators never type the OS or hostname when
+// registering an asset; the control plane fills the asset's os/os_version,
+// hostname and address from the signed inventory once the agent first reports.
 type Host struct {
+	Hostname  string `json:"hostname"`   // os.Hostname()
+	Address   string `json:"address"`    // preferred outbound IPv4, when detectable
 	OS        string `json:"os"`         // distro id (ubuntu, rhel, debian…) or GOOS
 	OSVersion string `json:"os_version"` // VERSION_ID (e.g. "24.04") when known
 	Family    string `json:"family"`     // "linux" | "darwin" | "windows" | …
@@ -35,7 +39,26 @@ func DetectHost() Host {
 		// darwin/windows, or os-release missing: use the platform family.
 		host.OS = runtime.GOOS
 	}
+	if name, err := os.Hostname(); err == nil {
+		host.Hostname = name
+	}
+	host.Address = localAddress()
 	return host
+}
+
+// localAddress returns the preferred outbound IPv4 of this host, or "" when it
+// cannot be determined. It opens a UDP socket to a public address but sends
+// nothing — the kernel picks the source IP the host would use to route out.
+func localAddress() string {
+	conn, err := net.Dial("udp", "8.8.8.8:80")
+	if err != nil {
+		return ""
+	}
+	defer func() { _ = conn.Close() }()
+	if addr, ok := conn.LocalAddr().(*net.UDPAddr); ok {
+		return addr.IP.String()
+	}
+	return ""
 }
 
 // parseOSRelease returns the ID and VERSION_ID values from an os-release file.

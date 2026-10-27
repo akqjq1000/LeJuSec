@@ -11,7 +11,7 @@
 import datetime as dt
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -58,6 +58,28 @@ def request_scan(asset_id: int, session: SessionDep, actor: Actor) -> CommandOut
     return _to_out(row)
 
 
+@router.post("/{asset_id}/scan-requests/{command_id}/cancel", response_model=CommandOut)
+def cancel_scan(
+    asset_id: int, command_id: int, session: SessionDep, actor: Actor
+) -> CommandOut:
+    """대기/청구된 검사 요청을 취소한다(운영자 admin).
+
+    pending은 확실히 취소되고(에이전트가 가져가지 않음), claimed는 베스트에포트로
+    canceled 표시한다(이미 에이전트가 실행 중일 수 있음). 완료/실패/취소된 것은 변경 없음.
+    """
+    get_or_404(session, asset_id)
+    row = session.get(AgentCommandRow, command_id)
+    if row is None or row.asset_id != asset_id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="command not found")
+    if row.status in ("pending", "claimed"):
+        row.status = "canceled"
+        row.done_at = dt.datetime.now(dt.UTC)
+        record_audit(session, actor, "scan.cancel", f"{asset_id}:{command_id}")
+        session.commit()
+        session.refresh(row)
+    return _to_out(row)
+
+
 @router.get("/{asset_id}/scan-requests", response_model=list[CommandOut])
 def list_scan_requests(asset_id: int, session: SessionDep) -> list[CommandOut]:
     """최근 검사 명령 상태(운영자 조회)."""
@@ -78,6 +100,10 @@ async def pull_commands(
     """에이전트가 대기 중 명령을 가져간다(서명 인증; 빈 바디). claimed로 표시."""
     asset = get_or_404(session, asset_id)
     await read_signed_body(asset, request)  # 빈 바디 서명 검증
+    # 일시정지된 자산은 대기 명령을 보류한다(상태는 pending 유지 → 재개 시 디스패치).
+    if asset.scan_paused:
+        session.commit()  # last_seen_at 갱신은 반영
+        return []
     rows = session.scalars(
         select(AgentCommandRow)
         .where(AgentCommandRow.asset_id == asset_id, AgentCommandRow.status == "pending")
@@ -104,6 +130,8 @@ async def report_commands(asset_id: int, request: Request, session: SessionDep) 
         row = session.get(AgentCommandRow, result.id)
         if row is None or row.asset_id != asset_id:
             continue
+        if row.status == "canceled":
+            continue  # 취소된 명령의 뒤늦은 결과 보고는 무시한다.
         row.status = result.status
         row.result = result.result[:255]
         row.done_at = now

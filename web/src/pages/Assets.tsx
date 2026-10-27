@@ -147,7 +147,9 @@ function TreeGroup({
                 onClick={() => onSelect(a.id)}
               >
                 <span className={`dot ${STATE_DOT[agentState(a)]}`} title={AGENT_STATE_LABEL[agentState(a)]} />
-                <span className="tree-host">{a.hostname}</span>
+                <span className="tree-host">
+                  {a.hostname.startsWith('pending-') ? a.address || a.hostname : a.hostname}
+                </span>
               </button>
             </li>
           ))}
@@ -167,29 +169,44 @@ function AddAssetForm({
   onCancel: () => void
 }) {
   const [hostname, setHostname] = useState('')
+  const [address, setAddress] = useState('')
   const [role, setRole] = useState('')
   const [group, setGroup] = useState('')
 
   const m = useMutation({
-    // OS는 입력받지 않는다 — 에이전트가 인벤토리를 보고할 때 자동 탐지된다.
+    // hostname/OS는 선택값 — 에이전트가 처음 통신할 때 서버가 자동으로 채운다.
     mutationFn: () =>
-      api.registerAsset({ hostname: hostname.trim(), role: role.trim(), group: group.trim() }),
+      api.registerAsset({
+        hostname: hostname.trim(),
+        address: address.trim(),
+        role: role.trim(),
+        group: group.trim(),
+      }),
     onSuccess: onDone,
   })
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (hostname.trim()) m.mutate()
+    m.mutate()
   }
 
   return (
     <form className="form-grid" onSubmit={submit}>
       <label>
-        호스트명 *
+        주소(IP/도메인)
         <input
           className="input"
           autoFocus
-          placeholder="예: web-01"
+          placeholder="예: 10.0.0.12 또는 web.example.com (선택)"
+          value={address}
+          onChange={(e) => setAddress(e.target.value)}
+        />
+      </label>
+      <label>
+        호스트명
+        <input
+          className="input"
+          placeholder="비우면 에이전트 연결 시 자동 설정"
           value={hostname}
           onChange={(e) => setHostname(e.target.value)}
         />
@@ -212,13 +229,13 @@ function AddAssetForm({
           placeholder="기존 그룹 선택 또는 새 그룹 입력 (선택)"
         />
       </label>
-      <p className="muted">OS는 에이전트 연결 시 자동 탐지됩니다.</p>
+      <p className="muted">호스트명·OS는 에이전트 첫 통신 시 자동으로 채워집니다.</p>
       {m.error ? <p className="error">{(m.error as Error).message}</p> : null}
       <div className="modal-actions">
         <button type="button" onClick={onCancel} disabled={m.isPending}>
           취소
         </button>
-        <button type="submit" className="btn-primary" disabled={m.isPending || !hostname.trim()}>
+        <button type="submit" className="btn-primary" disabled={m.isPending}>
           등록
         </button>
       </div>

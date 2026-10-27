@@ -29,7 +29,9 @@ def _is_agent_signed(request: Request) -> bool:
     """에이전트 서명 엔드포인트(서명으로 인증 → 운영자 토큰 면제)인지."""
     if request.method != "POST":
         return False
-    return request.url.path.endswith(("/inventory", "/scan", "/integrity", "/pull", "/report"))
+    return request.url.path.endswith(
+        ("/inventory", "/scan", "/integrity", "/pull", "/report", "/heartbeat")
+    )
 
 
 def role_for(request: Request) -> str | None:
