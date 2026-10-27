@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import ConfirmModal from '../components/ConfirmModal'
+import ScanProgress from '../components/ScanProgress'
 import { API_BASE, HEALTH_LABEL, api, getToken, type Asset, type Remediation } from '../api'
 
 type Tab = 'overview' | 'inventory' | 'checks' | 'integrity' | 'remediations'
@@ -255,7 +256,7 @@ function Checks({ id }: { id: number }) {
           <thead>
             <tr>
               <th>검사 요청</th>
-              <th>상태</th>
+              <th>진행</th>
               <th>결과</th>
               <th>요청 시각</th>
             </tr>
@@ -265,9 +266,7 @@ function Checks({ id }: { id: number }) {
               <tr key={c.id}>
                 <td>#{c.id}</td>
                 <td>
-                  <span className={`badge ${c.status === 'done' ? 'pass' : c.status === 'failed' ? 'fail' : ''}`}>
-                    {c.status}
-                  </span>
+                  <ScanProgress status={c.status} result={c.result} />
                 </td>
                 <td>{c.result || '-'}</td>
                 <td>{new Date(c.created_at).toLocaleString()}</td>

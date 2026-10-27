@@ -850,6 +850,66 @@ button:disabled {
   vertical-align: middle;
   margin-right: 4px;
 }
+/* 점검 진행 프로그레스 바 */
+.scan-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 150px;
+}
+.progress-track {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--border);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--accent);
+  transition: width 0.4s ease;
+}
+.progress-track.tone-done .progress-fill {
+  background: var(--ok);
+}
+.progress-track.tone-fail .progress-fill {
+  background: var(--bad);
+}
+.progress-track.tone-cancel .progress-fill {
+  background: var(--border-strong);
+}
+/* 진행 중 줄무늬 애니메이션 */
+.progress-fill.active {
+  background-image: linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.28) 25%,
+    transparent 25%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.28) 50%,
+    rgba(255, 255, 255, 0.28) 75%,
+    transparent 75%,
+    transparent
+  );
+  background-size: 16px 16px;
+  animation: progress-stripes 1s linear infinite;
+}
+@keyframes progress-stripes {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 16px 0;
+  }
+}
+.progress-label {
+  font-size: 0.8em;
+  color: var(--muted);
+}
+@media (prefers-reduced-motion: reduce) {
+  .progress-fill.active {
+    animation: none;
+  }
+}
 .asset-detail-pane {
   min-width: 0;
   background: var(--panel);

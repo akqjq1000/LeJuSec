@@ -31,11 +31,19 @@ def test_install_script_open_without_token() -> None:
         settings.operator_tokens = original
 
 
-def test_agent_binary_404_when_absent(client: TestClient) -> None:
-    # 배포 디렉터리에 바이너리가 없으면 404 (스크립트는 릴리스로 폴백).
-    assert client.get("/agent/lejusec-agent-linux-amd64").status_code == 404
-    # 경로 조작·잘못된 이름도 404.
-    assert client.get("/agent/..%2f..%2fetc%2fpasswd").status_code == 404
+def test_agent_binary_404_when_absent(client: TestClient, tmp_path: Path) -> None:
+    from lejusec.config import settings
+
+    # 빈 배포 디렉터리로 격리(개발 머신의 실제 dist/ 영향 배제).
+    original = settings.agent_dist_dir
+    settings.agent_dist_dir = str(tmp_path)
+    try:
+        # 배포 디렉터리에 바이너리가 없으면 404 (스크립트는 릴리스로 폴백).
+        assert client.get("/agent/lejusec-agent-linux-amd64").status_code == 404
+        # 경로 조작·잘못된 이름도 404.
+        assert client.get("/agent/..%2f..%2fetc%2fpasswd").status_code == 404
+    finally:
+        settings.agent_dist_dir = original
 
 
 def test_agent_binary_served_when_present(client: TestClient, tmp_path: Path) -> None:
