@@ -59,9 +59,7 @@ def request_scan(asset_id: int, session: SessionDep, actor: Actor) -> CommandOut
 
 
 @router.post("/{asset_id}/scan-requests/{command_id}/cancel", response_model=CommandOut)
-def cancel_scan(
-    asset_id: int, command_id: int, session: SessionDep, actor: Actor
-) -> CommandOut:
+def cancel_scan(asset_id: int, command_id: int, session: SessionDep, actor: Actor) -> CommandOut:
     """대기/청구된 검사 요청을 취소한다(운영자 admin).
 
     pending은 확실히 취소되고(에이전트가 가져가지 않음), claimed는 베스트에포트로

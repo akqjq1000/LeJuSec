@@ -1,4 +1,4 @@
-import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueries, useQuery, useQueryClient, type Query } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 
@@ -61,8 +61,8 @@ export default function Scans() {
     queries: assets.map((a) => ({
       queryKey: ['scan-requests', a.id],
       queryFn: () => api.scanRequests(a.id),
-      refetchInterval: (query) => {
-        const list = query.state.data ?? []
+      refetchInterval: (query: Query) => {
+        const list = (query.state.data as Command[] | undefined) ?? []
         return list.some((c) => c.status === 'pending' || c.status === 'claimed') ? 3000 : false
       },
     })),
