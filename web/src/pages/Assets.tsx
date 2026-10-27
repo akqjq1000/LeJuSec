@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useMemo, useState } from 'react'
 
+import GroupCombo from '../components/GroupCombo'
 import Modal from '../components/Modal'
 import { AGENT_STATE_LABEL, agentState, api, type AgentState, type Asset } from '../api'
 import { AssetDetailView } from './AssetDetail'
@@ -204,18 +205,12 @@ function AddAssetForm({
       </label>
       <label>
         그룹
-        <input
-          className="input"
-          list="add-asset-group-list"
-          placeholder="기존 그룹 선택 또는 새 그룹 입력 (선택)"
+        <GroupCombo
           value={group}
-          onChange={(e) => setGroup(e.target.value)}
+          onChange={setGroup}
+          options={groups}
+          placeholder="기존 그룹 선택 또는 새 그룹 입력 (선택)"
         />
-        <datalist id="add-asset-group-list">
-          {groups.map((g) => (
-            <option key={g} value={g} />
-          ))}
-        </datalist>
       </label>
       <p className="muted">OS는 에이전트 연결 시 자동 탐지됩니다.</p>
       {m.error ? <p className="error">{(m.error as Error).message}</p> : null}

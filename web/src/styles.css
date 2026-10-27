@@ -270,6 +270,11 @@ h1 {
   font-size: 14px;
   vertical-align: top;
 }
+/* 열 구분선(마지막 열 제외) */
+.table th:not(:last-child),
+.table td:not(:last-child) {
+  border-right: 1px solid var(--border);
+}
 .table thead th {
   color: var(--muted);
   font-weight: 600;
@@ -659,6 +664,44 @@ button:disabled {
 }
 .page-head h1 {
   margin-bottom: var(--s-2);
+}
+
+/* ---- Combo (custom datalist) ---- */
+.combo {
+  position: relative;
+}
+.combo .input {
+  width: 100%;
+  min-width: 0;
+}
+.combo-list {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0;
+  right: 0;
+  z-index: 60;
+  margin: 0;
+  padding: var(--s-1);
+  list-style: none;
+  background: var(--panel);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-sm);
+  box-shadow: var(--shadow-2);
+  max-height: 200px;
+  overflow: auto;
+}
+.combo-list button {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-radius: var(--r-sm);
+  padding: 6px 10px;
+  font-size: 13px;
+}
+.combo-list button:hover {
+  background: var(--accent-weak);
+  border-color: transparent;
 }
 
 /* ---- Modal form ---- */
