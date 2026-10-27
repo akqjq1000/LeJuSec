@@ -696,7 +696,7 @@ button:disabled {
 /* ---- Assets master-detail (2 columns) ---- */
 .asset-layout {
   display: grid;
-  grid-template-columns: 260px 1fr;
+  grid-template-columns: 230px 1fr;
   gap: var(--s-4);
   align-items: start;
 }
@@ -852,7 +852,7 @@ button:disabled {
   background: var(--panel-2);
 }
 
-@media (max-width: 860px) {
+@media (max-width: 680px) {
   .asset-layout {
     grid-template-columns: 1fr;
   }
