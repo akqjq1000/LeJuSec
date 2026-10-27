@@ -52,7 +52,11 @@ def _pump(prefix: str, stream: object, color: str) -> None:
     """자식 프로세스 출력 라인마다 접두어를 붙여 중계한다."""
     reset = "\033[0m"
     for raw in iter(stream.readline, ""):  # type: ignore[attr-defined]
-        line = raw.rstrip("\n")
+        try:
+            line = raw.rstrip("\n")
+        except UnicodeDecodeError:
+            # 만약 디코딩 에러가 발생하면 대체 문자로 처리한다.
+            line = raw.encode("utf-8", errors="replace").decode("utf-8").rstrip("\n")
         sys.stdout.write(f"{color}[{prefix}]{reset} {line}\n")
         sys.stdout.flush()
 
@@ -67,6 +71,7 @@ def _spawn(
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,
+        encoding="utf-8",
         bufsize=1,
     )
     threading.Thread(target=_pump, args=(name, proc.stdout, color), daemon=True).start()
