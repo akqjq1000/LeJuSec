@@ -34,10 +34,16 @@ curl -fsSL https://<컨트롤플레인>:8000/install.sh | sudo bash -s -- --toke
   --ca-cert /etc/lejusec/ca.crt --client-cert /etc/lejusec/client.crt --client-key /etc/lejusec/client.key
 ```
 
-스크립트가 수행하는 일: 에이전트 바이너리 내려받기(GitHub 릴리스, 아키텍처 자동 판별)
+스크립트가 수행하는 일: 에이전트 바이너리 내려받기(아키텍처 자동 판별)
 → `/usr/local/bin/lejusec-agent` 설치 → Ed25519 키 생성 → 자산 등록 → 공개키 등록
 → 설정 생성 → 첫 인벤토리 전송 → systemd 타이머로 주기 실행 등록.
 멱등: 같은 호스트명이면 기존 자산을 재사용하고 공개키만 갱신한다.
+
+> **바이너리 출처**: 설치 스크립트는 ① 컨트롤 플레인(`GET /agent/...`) → ② GitHub
+> 릴리스 순으로 내려받는다. 릴리스를 아직 발행하지 않은 자체 호스팅 환경에서는 서버에서
+> `make agent-dist` 를 한 번 실행해 `dist/` 에 바이너리를 만들어 두면 컨트롤 플레인이
+> 바로 제공한다(컨테이너로 띄웠다면 `dist/` 를 `/app/dist` 로 마운트). 이미 빌드한
+> 바이너리가 있으면 `--agent-bin PATH` 또는 `--binary-url URL` 로 바로 지정할 수도 있다.
 
 생성물: `/etc/lejusec/agent.env`(설정), `/etc/lejusec/agent-run.sh`(실행 래퍼),
 `lejusec-agent.timer`(주기 실행). 이후 수동 실행은 래퍼로 한다 — `agent-run.sh`(인벤토리),

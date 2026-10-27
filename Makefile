@@ -1,4 +1,4 @@
-.PHONY: help cp-install cp-lint cp-test agent-build agent-test up down certs cp-run cp-run-tls \
+.PHONY: help cp-install cp-lint cp-test agent-build agent-test agent-dist up down certs cp-run cp-run-tls \
 	dev dev-tls stack-up stack-down stack-build
 
 help:
@@ -7,6 +7,7 @@ help:
 	@echo "cp-test      pytest"
 	@echo "agent-build  go build"
 	@echo "agent-test   go test"
+	@echo "agent-dist   에이전트 바이너리(linux amd64/arm64) dist/ 에 빌드"
 	@echo "up / down    로컬 의존 서비스 기동/중지 (docker compose)"
 	@echo "certs        개발용 mTLS 인증서 생성 (certs/)"
 	@echo "cp-run       컨트롤 플레인 평문 HTTP 기동"
@@ -31,6 +32,12 @@ agent-build:
 
 agent-test:
 	cd agent && go test ./...
+
+# 설치 스크립트가 컨트롤 플레인에서 내려받을 수 있도록 linux/amd64·arm64 바이너리를 dist/ 에 만든다.
+agent-dist:
+	cd agent && GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags "-s -w" -o ../dist/lejusec-agent-linux-amd64 ./cmd/agent
+	cd agent && GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -trimpath -ldflags "-s -w" -o ../dist/lejusec-agent-linux-arm64 ./cmd/agent
+	@echo "dist/ 에 에이전트 바이너리 생성 완료 (컨트롤 플레인이 GET /agent/... 로 제공)"
 
 up:
 	docker compose -f deploy/compose.dev.yml up -d

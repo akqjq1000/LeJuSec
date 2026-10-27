@@ -36,6 +36,10 @@ class Settings(BaseSettings):
     host: str = "0.0.0.0"
     port: int = 8000
 
+    # 에이전트 바이너리 배포 디렉터리(GET /agent/{name} 로 제공). 비우면 저장소 루트의
+    # dist/ 를 쓴다. `make agent-dist` 로 linux/amd64·arm64 바이너리를 여기에 만든다.
+    agent_dist_dir: str = ""
+
     # mTLS: 세 값이 모두 설정되면 상호 TLS(클라이언트 인증서 요구)로 기동한다.
     tls_certfile: str = ""
     tls_keyfile: str = ""
@@ -61,6 +65,14 @@ class Settings(BaseSettings):
     sandbox_backend: str = "dry-run"
     sandbox_image: str = "ubuntu:24.04"
     sandbox_timeout: int = 120
+
+    @property
+    def agent_dist_path(self) -> Path:
+        """에이전트 바이너리 배포 디렉터리(기본: 저장소 루트의 dist/)."""
+        if self.agent_dist_dir:
+            return Path(self.agent_dist_dir)
+        # config.py → control-plane/src/lejusec/config.py 이므로 parents[3] == 저장소 루트.
+        return Path(__file__).resolve().parents[3] / "dist"
 
     @property
     def cors_origin_list(self) -> list[str]:

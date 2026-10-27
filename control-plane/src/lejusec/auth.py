@@ -66,6 +66,7 @@ class OperatorAuthMiddleware(BaseHTTPMiddleware):
             not tokens
             or request.method == "OPTIONS"
             or request.url.path in _OPEN_PATHS
+            or request.url.path.startswith("/agent/")  # 바이너리 다운로드(무인증)
             or _is_agent_signed(request)
         ):
             return await call_next(request)

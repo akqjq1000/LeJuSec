@@ -95,17 +95,28 @@ if [ -n "$AGENT_BIN_SRC" ]; then
   echo "▶ 로컬 바이너리 설치 ($AGENT_BIN_SRC)"
   install -m 0755 "$AGENT_BIN_SRC" "$AGENT_BIN"
 else
-  if [ -z "$BINARY_URL" ]; then
+  # 다운로드 후보: --binary-url 지정 시 그것만, 아니면 (1) 컨트롤 플레인 → (2) GitHub 릴리스.
+  if [ -n "$BINARY_URL" ]; then
+    urls=("$BINARY_URL")
+  else
     case "$(uname -m)" in
       x86_64|amd64)   arch=amd64 ;;
       aarch64|arm64)  arch=arm64 ;;
       *) die "지원하지 않는 아키텍처: $(uname -m) (--binary-url 로 직접 지정)" ;;
     esac
-    BINARY_URL="https://github.com/$REPO/releases/latest/download/lejusec-agent-linux-$arch"
+    urls=(
+      "$SERVER/agent/lejusec-agent-linux-$arch"
+      "https://github.com/$REPO/releases/latest/download/lejusec-agent-linux-$arch"
+    )
   fi
-  echo "▶ 에이전트 내려받기 ($BINARY_URL)"
   tmp="$(mktemp)"
-  curl -fSL "$BINARY_URL" -o "$tmp" || die "바이너리 다운로드 실패: $BINARY_URL"
+  ok=0
+  for u in "${urls[@]}"; do
+    echo "▶ 에이전트 내려받기 ($u)"
+    if curl -fSL "$u" -o "$tmp"; then ok=1; break; fi
+    echo "  실패 — 다음 후보 시도" >&2
+  done
+  [ "$ok" = "1" ] || die "바이너리 다운로드 실패. 서버에 'make agent-dist' 로 바이너리를 두거나 --binary-url/--agent-bin 로 지정하세요."
   install -m 0755 "$tmp" "$AGENT_BIN"
   rm -f "$tmp"
 fi
