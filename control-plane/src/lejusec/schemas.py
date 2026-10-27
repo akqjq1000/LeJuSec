@@ -42,6 +42,14 @@ class GroupIn(BaseModel):
     group: str = Field(default="", max_length=64)
 
 
+class GroupCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=64)
+
+
+class GroupName(BaseModel):
+    name: str
+
+
 class PackageIn(BaseModel):
     name: str
     version: str = ""

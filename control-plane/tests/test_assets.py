@@ -72,3 +72,23 @@ def test_group_on_register_and_update(client: TestClient) -> None:
 
     # 그룹 해제(빈 값)
     assert client.put(f"/assets/{asset_id}/group", json={"group": ""}).json()["group"] == ""
+
+
+def test_group_registry(client: TestClient) -> None:
+    # 빈 그룹 생성(자산 없이도 목록에 유지)
+    assert client.post("/asset-groups", json={"name": "운영-웹"}).status_code == 201
+    assert "운영-웹" in client.get("/asset-groups").json()
+
+    # 중복 생성 409
+    assert client.post("/asset-groups", json={"name": "운영-웹"}).status_code == 409
+
+    # 레지스트리 ∪ 자산 지정 그룹
+    client.post("/assets", json={"hostname": "gr-01", "group": "DB"})
+    assert set(client.get("/asset-groups").json()) >= {"운영-웹", "DB"}
+
+    # 그룹 삭제 → 소속 자산은 미분류로
+    aid = client.get("/assets").json()[0]["id"]
+    client.put(f"/assets/{aid}/group", json={"group": "운영-웹"})
+    assert client.delete("/asset-groups/운영-웹").status_code == 204
+    assert "운영-웹" not in client.get("/asset-groups").json()
+    assert client.get(f"/assets/{aid}").json()["group"] == ""

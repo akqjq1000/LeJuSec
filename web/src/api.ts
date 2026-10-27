@@ -221,7 +221,9 @@ export const api = {
     group?: string
   }) => post<Asset>('/assets', body),
   // 자산 그룹
-  assetGroups: () => get<string[]>('/assets/groups'),
+  assetGroups: () => get<string[]>('/asset-groups'),
+  createGroup: (name: string) => post<{ name: string }>('/asset-groups', { name }),
+  deleteGroup: (name: string) => del(`/asset-groups/${encodeURIComponent(name)}`),
   setGroup: (id: number, group: string) => put<Asset>(`/assets/${id}/group`, { group }),
   // 원격 검사 트리거 (서버→에이전트 명령 채널)
   scanRequests: (id: number) => get<Command[]>(`/assets/${id}/scan-requests`),

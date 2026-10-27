@@ -34,6 +34,18 @@ class Asset(Base):
     )
 
 
+class AssetGroupRow(Base):
+    """자산 그룹 레지스트리. 자산이 없는 빈 그룹도 유지되도록 그룹명을 저장한다."""
+
+    __tablename__ = "asset_groups"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    created_at: Mapped[dt.datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+
 class InventorySnapshot(Base):
     """에이전트가 전송한 인벤토리 스냅샷 (서명 검증 후 저장)."""
 

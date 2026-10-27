@@ -17,7 +17,11 @@ const TABS: [Tab, string][] = [
 
 export default function AssetDetail() {
   const params = useParams()
-  const id = Number(params.id)
+  return <AssetDetailView id={Number(params.id)} />
+}
+
+/** 자산 상세 내용. 라우트(/assets/:id)와 자산 탭의 2열 레이아웃에서 공용. */
+export function AssetDetailView({ id }: { id: number }) {
   const [tab, setTab] = useState<Tab>('overview')
   const asset = useQuery({ queryKey: ['asset', id], queryFn: () => api.asset(id) })
 
@@ -26,7 +30,7 @@ export default function AssetDetail() {
   if (!asset.data) return null
 
   return (
-    <section>
+    <div>
       <h1>{asset.data.hostname}</h1>
       <nav className="tabs">
         {TABS.map(([t, label]) => (
@@ -40,7 +44,7 @@ export default function AssetDetail() {
       {tab === 'checks' && <Checks id={id} />}
       {tab === 'integrity' && <Integrity id={id} />}
       {tab === 'remediations' && <Remediations id={id} />}
-    </section>
+    </div>
   )
 }
 

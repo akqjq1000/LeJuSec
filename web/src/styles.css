@@ -693,6 +693,175 @@ button:disabled {
   font-weight: 600;
 }
 
+/* ---- Assets master-detail (2 columns) ---- */
+.asset-layout {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: var(--s-4);
+  align-items: start;
+}
+.asset-tree {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-1);
+  padding: var(--s-2);
+  position: sticky;
+  top: 72px;
+  max-height: calc(100vh - 96px);
+  overflow: auto;
+}
+.tree-group + .tree-group {
+  margin-top: var(--s-1);
+}
+.tree-group-head {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: 6px 8px;
+  background: transparent;
+  border: none;
+  border-radius: var(--r-sm);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+}
+.tree-group-head:hover {
+  background: var(--panel-2);
+  border-color: transparent;
+}
+.tree-group-head .group-name {
+  flex: 1;
+}
+.tree-list {
+  list-style: none;
+  margin: 2px 0 var(--s-2);
+  padding: 0;
+}
+.tree-list.bordered {
+  margin: 0;
+}
+.tree-list.bordered li + li {
+  border-top: 1px solid var(--border);
+}
+.tree-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: 6px 8px 6px 24px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--r-sm);
+  font-size: 13px;
+  text-align: left;
+  color: var(--text);
+}
+.tree-item:hover {
+  background: var(--panel-2);
+  text-decoration: none;
+  border-color: transparent;
+}
+.tree-item.active {
+  background: var(--accent-weak);
+  color: var(--accent);
+}
+.tree-host {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--border-strong);
+}
+.dot.ok {
+  background: var(--ok);
+}
+.dot.warn {
+  background: var(--warn);
+}
+.dot.off {
+  background: var(--border-strong);
+}
+.asset-detail-pane {
+  min-width: 0;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-1);
+  padding: var(--s-5);
+}
+.asset-detail-pane h1 {
+  font-size: 19px;
+}
+
+/* ---- Group accordion (groups tab) ---- */
+.accordion-head {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: var(--s-2) var(--s-3);
+  background: var(--panel-2);
+}
+.accordion-toggle {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: left;
+}
+.accordion-toggle:hover {
+  background: transparent;
+  border-color: transparent;
+}
+.accordion-toggle .group-name {
+  flex: 1;
+}
+.pick-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 320px;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+}
+.pick-list li + li {
+  border-top: 1px solid var(--border);
+}
+.pick-row {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: var(--s-2) var(--s-3);
+  cursor: pointer;
+  font-weight: 400;
+}
+.pick-row:hover {
+  background: var(--panel-2);
+}
+
+@media (max-width: 860px) {
+  .asset-layout {
+    grid-template-columns: 1fr;
+  }
+  .asset-tree {
+    position: static;
+    max-height: 280px;
+  }
+}
+
 /* ---- Asset group table ---- */
 .group-sep td {
   background: var(--panel-2);

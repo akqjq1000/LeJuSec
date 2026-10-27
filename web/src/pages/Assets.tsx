@@ -1,14 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
 
 import Modal from '../components/Modal'
 import { AGENT_STATE_LABEL, agentState, api, type AgentState, type Asset } from '../api'
+import { AssetDetailView } from './AssetDetail'
 
-const STATE_BADGE: Record<AgentState, string> = {
-  connected: 'pass',
-  pending: 'na',
-  unregistered: '',
+const STATE_DOT: Record<AgentState, string> = {
+  connected: 'ok',
+  pending: 'warn',
+  unregistered: 'off',
 }
 const UNGROUPED = '미분류'
 
@@ -19,9 +19,21 @@ export default function Assets() {
   const me = useQuery({ queryKey: ['me'], queryFn: api.me, retry: false })
   const canWrite = me.data?.role === 'admin'
   const [adding, setAdding] = useState(false)
+  const [selected, setSelected] = useState<number | null>(null)
 
-  const assets = data ?? []
-  // 그룹별 섹션으로 묶는다(미분류는 마지막).
+  const assets = useMemo(() => data ?? [], [data])
+
+  // 선택이 없거나 사라졌으면 첫 자산을 선택.
+  useEffect(() => {
+    if (assets.length === 0) {
+      setSelected(null)
+      return
+    }
+    if (selected === null || !assets.some((a) => a.id === selected)) {
+      setSelected(assets[0].id)
+    }
+  }, [assets, selected])
+
   const sections = useMemo(() => {
     const map = new Map<string, Asset[]>()
     for (const a of assets) {
@@ -50,7 +62,7 @@ export default function Assets() {
       <div className="page-head">
         <div>
           <h1>자산</h1>
-          <p className="subtitle">관리 대상 시스템 목록 · 그룹별 점검 상태 (그룹 변경은 ‘자산 그룹’ 탭)</p>
+          <p className="subtitle">왼쪽 트리에서 자산을 선택하면 오른쪽에 세부 정보가 표시됩니다</p>
         </div>
         {canWrite ? (
           <button className="btn-primary" onClick={() => setAdding(true)}>
@@ -62,23 +74,15 @@ export default function Assets() {
       {assets.length === 0 ? (
         <p className="muted">등록된 자산이 없습니다. ‘자산 추가’로 등록하세요.</p>
       ) : (
-        <div className="table-wrap">
-          <table className="table">
-            <thead>
-              <tr>
-                <th>호스트</th>
-                <th>OS</th>
-                <th>역할</th>
-                <th>에이전트 연결</th>
-                <th>최근 점검</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sections.map(([name, rows]) => (
-                <GroupSection key={name} name={name} rows={rows} />
-              ))}
-            </tbody>
-          </table>
+        <div className="asset-layout">
+          <AssetTree sections={sections} selected={selected} onSelect={setSelected} />
+          <div className="asset-detail-pane">
+            {selected !== null ? (
+              <AssetDetailView key={selected} id={selected} />
+            ) : (
+              <p className="muted">자산을 선택하세요.</p>
+            )}
+          </div>
         </div>
       )}
 
@@ -96,36 +100,59 @@ export default function Assets() {
   )
 }
 
-function GroupSection({ name, rows }: { name: string; rows: Asset[] }) {
+function AssetTree({
+  sections,
+  selected,
+  onSelect,
+}: {
+  sections: [string, Asset[]][]
+  selected: number | null
+  onSelect: (id: number) => void
+}) {
   return (
-    <>
-      <tr className="group-sep">
-        <td colSpan={5}>
-          {name} <span className="muted">· {rows.length}</span>
-        </td>
-      </tr>
-      {rows.map((a) => (
-        <tr key={a.id}>
-          <td>
-            <Link to={`/assets/${a.id}`}>{a.hostname}</Link>
-          </td>
-          <td>
-            {a.os === 'pending' || a.os === '' ? (
-              <span className="muted">자동 탐지 대기</span>
-            ) : (
-              `${a.os} ${a.os_version}`.trim()
-            )}
-          </td>
-          <td>{a.role || <span className="muted">-</span>}</td>
-          <td>
-            <span className={`badge ${STATE_BADGE[agentState(a)]}`}>
-              {AGENT_STATE_LABEL[agentState(a)]}
-            </span>
-          </td>
-          <td>{a.last_scan_at ? new Date(a.last_scan_at).toLocaleString() : '-'}</td>
-        </tr>
+    <nav className="asset-tree" aria-label="자산 트리">
+      {sections.map(([name, rows]) => (
+        <TreeGroup key={name} name={name} rows={rows} selected={selected} onSelect={onSelect} />
       ))}
-    </>
+    </nav>
+  )
+}
+
+function TreeGroup({
+  name,
+  rows,
+  selected,
+  onSelect,
+}: {
+  name: string
+  rows: Asset[]
+  selected: number | null
+  onSelect: (id: number) => void
+}) {
+  const [open, setOpen] = useState(true)
+  return (
+    <div className="tree-group">
+      <button className="tree-group-head" onClick={() => setOpen((o) => !o)}>
+        <span className="group-caret">{open ? '▾' : '▸'}</span>
+        <span className="group-name">{name}</span>
+        <span className="muted">{rows.length}</span>
+      </button>
+      {open ? (
+        <ul className="tree-list">
+          {rows.map((a) => (
+            <li key={a.id}>
+              <button
+                className={`tree-item ${a.id === selected ? 'active' : ''}`}
+                onClick={() => onSelect(a.id)}
+              >
+                <span className={`dot ${STATE_DOT[agentState(a)]}`} title={AGENT_STATE_LABEL[agentState(a)]} />
+                <span className="tree-host">{a.hostname}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
   )
 }
 
