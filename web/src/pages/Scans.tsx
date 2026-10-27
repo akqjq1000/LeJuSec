@@ -28,7 +28,7 @@ export default function Scans() {
     const set = new Set<string>()
     for (const rs of resultsByAsset.values()) for (const r of rs) set.add(r.standard)
     return ['전체', ...[...set].sort()]
-  }, [resultQs.map((q) => q.dataUpdatedAt).join(',')]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [resultQs.map((q) => q.dataUpdatedAt).join(',')])
   const [group, setGroup] = useState('전체')
 
   const inGroup = (r: CheckResult) => group === '전체' || r.standard === group
