@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 
+import Modal from '../components/Modal'
 import { AGENT_STATE_LABEL, agentState, api, type AgentState, type Asset } from '../api'
 
 const STATE_BADGE: Record<AgentState, string> = {
@@ -17,6 +18,7 @@ export default function Assets() {
   const groupsQ = useQuery({ queryKey: ['asset-groups'], queryFn: api.assetGroups })
   const me = useQuery({ queryKey: ['me'], queryFn: api.me, retry: false })
   const canWrite = me.data?.role === 'admin'
+  const [adding, setAdding] = useState(false)
 
   const assets = data ?? []
   // 그룹별 섹션으로 묶는다(미분류는 마지막).
@@ -43,15 +45,22 @@ export default function Assets() {
   if (isLoading) return <p className="muted">불러오는 중…</p>
   if (error) return <p className="error">{(error as Error).message}</p>
 
-  const knownGroups = groupsQ.data ?? []
-
   return (
     <section>
-      <h1>자산</h1>
-      <p className="subtitle">관리 대상 시스템 목록 · 그룹별 점검 상태</p>
-      {canWrite ? <RegisterAssetForm groups={knownGroups} onDone={invalidate} /> : null}
+      <div className="page-head">
+        <div>
+          <h1>자산</h1>
+          <p className="subtitle">관리 대상 시스템 목록 · 그룹별 점검 상태 (그룹 변경은 ‘자산 그룹’ 탭)</p>
+        </div>
+        {canWrite ? (
+          <button className="btn-primary" onClick={() => setAdding(true)}>
+            + 자산 추가
+          </button>
+        ) : null}
+      </div>
+
       {assets.length === 0 ? (
-        <p className="muted">등록된 자산이 없습니다.</p>
+        <p className="muted">등록된 자산이 없습니다. ‘자산 추가’로 등록하세요.</p>
       ) : (
         <div className="table-wrap">
           <table className="table">
@@ -59,43 +68,35 @@ export default function Assets() {
               <tr>
                 <th>호스트</th>
                 <th>OS</th>
-                <th>그룹</th>
+                <th>역할</th>
                 <th>에이전트 연결</th>
                 <th>최근 점검</th>
               </tr>
             </thead>
             <tbody>
               {sections.map(([name, rows]) => (
-                <GroupSection
-                  key={name}
-                  name={name}
-                  rows={rows}
-                  canWrite={canWrite}
-                  groups={knownGroups}
-                  onChanged={invalidate}
-                />
+                <GroupSection key={name} name={name} rows={rows} />
               ))}
             </tbody>
           </table>
         </div>
       )}
+
+      <Modal open={adding} title="자산 추가" onClose={() => setAdding(false)}>
+        <AddAssetForm
+          groups={groupsQ.data ?? []}
+          onDone={() => {
+            setAdding(false)
+            invalidate()
+          }}
+          onCancel={() => setAdding(false)}
+        />
+      </Modal>
     </section>
   )
 }
 
-function GroupSection({
-  name,
-  rows,
-  canWrite,
-  groups,
-  onChanged,
-}: {
-  name: string
-  rows: Asset[]
-  canWrite: boolean
-  groups: string[]
-  onChanged: () => void
-}) {
+function GroupSection({ name, rows }: { name: string; rows: Asset[] }) {
   return (
     <>
       <tr className="group-sep">
@@ -115,9 +116,7 @@ function GroupSection({
               `${a.os} ${a.os_version}`.trim()
             )}
           </td>
-          <td>
-            <GroupCell asset={a} canWrite={canWrite} groups={groups} onChanged={onChanged} />
-          </td>
+          <td>{a.role || <span className="muted">-</span>}</td>
           <td>
             <span className={`badge ${STATE_BADGE[agentState(a)]}`}>
               {AGENT_STATE_LABEL[agentState(a)]}
@@ -130,63 +129,15 @@ function GroupSection({
   )
 }
 
-function GroupCell({
-  asset,
-  canWrite,
+function AddAssetForm({
   groups,
-  onChanged,
+  onDone,
+  onCancel,
 }: {
-  asset: Asset
-  canWrite: boolean
   groups: string[]
-  onChanged: () => void
+  onDone: () => void
+  onCancel: () => void
 }) {
-  const [editing, setEditing] = useState(false)
-  const [value, setValue] = useState(asset.group)
-  const m = useMutation({
-    mutationFn: () => api.setGroup(asset.id, value.trim()),
-    onSuccess: () => {
-      setEditing(false)
-      onChanged()
-    },
-  })
-
-  if (!canWrite) return <>{asset.group || <span className="muted">-</span>}</>
-  if (!editing) {
-    return (
-      <button className="link-btn" onClick={() => setEditing(true)} title="그룹 변경">
-        {asset.group || <span className="muted">+ 그룹</span>}
-      </button>
-    )
-  }
-  return (
-    <span className="group-edit">
-      <input
-        className="input sm"
-        list="asset-group-list"
-        value={value}
-        autoFocus
-        placeholder="그룹명"
-        onChange={(e) => setValue(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') m.mutate()
-          if (e.key === 'Escape') setEditing(false)
-        }}
-      />
-      <datalist id="asset-group-list">
-        {groups.map((g) => (
-          <option key={g} value={g} />
-        ))}
-      </datalist>
-      <button className="btn-primary" onClick={() => m.mutate()} disabled={m.isPending}>
-        저장
-      </button>
-      <button onClick={() => setEditing(false)}>취소</button>
-    </span>
-  )
-}
-
-function RegisterAssetForm({ groups, onDone }: { groups: string[]; onDone: () => void }) {
   const [hostname, setHostname] = useState('')
   const [role, setRole] = useState('')
   const [group, setGroup] = useState('')
@@ -195,12 +146,7 @@ function RegisterAssetForm({ groups, onDone }: { groups: string[]; onDone: () =>
     // OS는 입력받지 않는다 — 에이전트가 인벤토리를 보고할 때 자동 탐지된다.
     mutationFn: () =>
       api.registerAsset({ hostname: hostname.trim(), role: role.trim(), group: group.trim() }),
-    onSuccess: () => {
-      setHostname('')
-      setRole('')
-      setGroup('')
-      onDone()
-    },
+    onSuccess: onDone,
   })
 
   const submit = (e: React.FormEvent) => {
@@ -209,36 +155,51 @@ function RegisterAssetForm({ groups, onDone }: { groups: string[]; onDone: () =>
   }
 
   return (
-    <form className="toolbar" onSubmit={submit}>
-      <input
-        className="input"
-        placeholder="호스트명 *"
-        value={hostname}
-        onChange={(e) => setHostname(e.target.value)}
-      />
-      <input
-        className="input sm"
-        placeholder="역할"
-        value={role}
-        onChange={(e) => setRole(e.target.value)}
-      />
-      <input
-        className="input sm"
-        list="register-group-list"
-        placeholder="그룹 (선택)"
-        value={group}
-        onChange={(e) => setGroup(e.target.value)}
-      />
-      <datalist id="register-group-list">
-        {groups.map((g) => (
-          <option key={g} value={g} />
-        ))}
-      </datalist>
-      <button type="submit" className="btn-primary" disabled={m.isPending || !hostname.trim()}>
-        자산 등록
-      </button>
-      <span className="muted">OS는 에이전트 연결 시 자동 탐지됩니다</span>
-      {m.error ? <span className="error">{(m.error as Error).message}</span> : null}
+    <form className="form-grid" onSubmit={submit}>
+      <label>
+        호스트명 *
+        <input
+          className="input"
+          autoFocus
+          placeholder="예: web-01"
+          value={hostname}
+          onChange={(e) => setHostname(e.target.value)}
+        />
+      </label>
+      <label>
+        역할
+        <input
+          className="input"
+          placeholder="예: 웹 서버 (선택)"
+          value={role}
+          onChange={(e) => setRole(e.target.value)}
+        />
+      </label>
+      <label>
+        그룹
+        <input
+          className="input"
+          list="add-asset-group-list"
+          placeholder="기존 그룹 선택 또는 새 그룹 입력 (선택)"
+          value={group}
+          onChange={(e) => setGroup(e.target.value)}
+        />
+        <datalist id="add-asset-group-list">
+          {groups.map((g) => (
+            <option key={g} value={g} />
+          ))}
+        </datalist>
+      </label>
+      <p className="muted">OS는 에이전트 연결 시 자동 탐지됩니다.</p>
+      {m.error ? <p className="error">{(m.error as Error).message}</p> : null}
+      <div className="modal-actions">
+        <button type="button" onClick={onCancel} disabled={m.isPending}>
+          취소
+        </button>
+        <button type="submit" className="btn-primary" disabled={m.isPending || !hostname.trim()}>
+          등록
+        </button>
+      </div>
     </form>
   )
 }

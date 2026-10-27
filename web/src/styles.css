@@ -649,6 +649,50 @@ button:disabled {
   word-break: break-all;
 }
 
+/* ---- Page header with action ---- */
+.page-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s-4);
+  flex-wrap: wrap;
+}
+.page-head h1 {
+  margin-bottom: var(--s-2);
+}
+
+/* ---- Modal form ---- */
+.form-grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+}
+.form-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+}
+.form-grid .input {
+  min-width: 0;
+  width: 100%;
+}
+.form-grid .modal-actions {
+  margin-top: var(--s-2);
+}
+
+/* 정적(비클릭) 그룹 헤더 */
+.group-head.static {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-3) var(--s-4);
+  background: var(--panel-2);
+  font-weight: 600;
+}
+
 /* ---- Asset group table ---- */
 .group-sep td {
   background: var(--panel-2);

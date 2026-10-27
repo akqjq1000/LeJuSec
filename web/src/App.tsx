@@ -6,6 +6,7 @@ const navClass = ({ isActive }: { isActive: boolean }) => (isActive ? 'active' :
 
 import { api, getToken, setToken } from './api'
 import AssetDetail from './pages/AssetDetail'
+import AssetGroups from './pages/AssetGroups'
 import Assets from './pages/Assets'
 import Audit from './pages/Audit'
 import Checks from './pages/Checks'
@@ -49,8 +50,11 @@ export default function App() {
           <NavLink to="/" end className={navClass}>
             대시보드
           </NavLink>
-          <NavLink to="/assets" className={navClass}>
+          <NavLink to="/assets" end className={navClass}>
             자산
+          </NavLink>
+          <NavLink to="/asset-groups" className={navClass}>
+            자산 그룹
           </NavLink>
           <NavLink to="/scans" className={navClass}>
             점검
@@ -68,6 +72,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/assets" element={<Assets />} />
+          <Route path="/asset-groups" element={<AssetGroups />} />
           <Route path="/assets/:id" element={<AssetDetail />} />
           <Route path="/scans" element={<Scans />} />
           <Route path="/checks" element={<Checks />} />
