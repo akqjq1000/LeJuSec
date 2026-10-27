@@ -87,6 +87,7 @@ export interface Asset {
   os: string
   os_version: string
   role: string
+  group: string
   managed: boolean
   agent_status: string
   public_key: string
@@ -212,8 +213,16 @@ export const api = {
   asset: (id: number) => get<Asset>(`/assets/${id}`),
   // 자산 등록 (G: 운영자 쓰기)
   // os/os_version은 선택값: 비우면 에이전트 인벤토리 보고 시 자동 탐지된다.
-  registerAsset: (body: { hostname: string; os?: string; os_version?: string; role: string }) =>
-    post<Asset>('/assets', body),
+  registerAsset: (body: {
+    hostname: string
+    os?: string
+    os_version?: string
+    role: string
+    group?: string
+  }) => post<Asset>('/assets', body),
+  // 자산 그룹
+  assetGroups: () => get<string[]>('/assets/groups'),
+  setGroup: (id: number, group: string) => put<Asset>(`/assets/${id}/group`, { group }),
   // 원격 검사 트리거 (서버→에이전트 명령 채널)
   scanRequests: (id: number) => get<Command[]>(`/assets/${id}/scan-requests`),
   requestScan: (id: number) => post<Command>(`/assets/${id}/scan-requests`),

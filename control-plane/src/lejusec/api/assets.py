@@ -18,6 +18,7 @@ from lejusec.models import Asset, InventorySnapshot
 from lejusec.schemas import (
     AssetCreate,
     AssetRead,
+    GroupIn,
     InventoryAck,
     InventoryIn,
     InventorySummaryOut,
@@ -54,9 +55,27 @@ def list_assets(session: SessionDep) -> list[AssetRead]:
     return [AssetRead.model_validate(a) for a in assets]
 
 
+@router.get("/groups", response_model=list[str])
+def list_groups(session: SessionDep) -> list[str]:
+    """등록된 자산 그룹명 목록(중복 제거, 빈 값 제외). 그룹 선택 UI용."""
+    rows = session.scalars(select(Asset.group).where(Asset.group != "").distinct()).all()
+    return sorted(rows)
+
+
 @router.get("/{asset_id}", response_model=AssetRead)
 def get_asset(asset_id: int, session: SessionDep) -> AssetRead:
     return AssetRead.model_validate(get_or_404(session, asset_id))
+
+
+@router.put("/{asset_id}/group", response_model=AssetRead)
+def set_group(asset_id: int, payload: GroupIn, session: SessionDep, actor: Actor) -> AssetRead:
+    """기존 자산의 그룹을 지정/변경한다(빈 값이면 그룹 해제)."""
+    asset = get_or_404(session, asset_id)
+    asset.group = payload.group.strip()
+    record_audit(session, actor, "asset.group", f"{asset_id}:{asset.group or '-'}")
+    session.commit()
+    session.refresh(asset)
+    return AssetRead.model_validate(asset)
 
 
 @router.post("/{asset_id}/manage", response_model=AssetRead)

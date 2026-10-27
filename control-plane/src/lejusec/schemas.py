@@ -13,6 +13,7 @@ class AssetCreate(BaseModel):
     os: str = Field(default="", max_length=64)
     os_version: str = Field(default="", max_length=64)
     role: str = Field(default="", max_length=64)
+    group: str = Field(default="", max_length=64)
 
 
 class AssetRead(BaseModel):
@@ -23,6 +24,7 @@ class AssetRead(BaseModel):
     os: str
     os_version: str
     role: str
+    group: str
     managed: bool
     agent_status: str
     public_key: str
@@ -33,6 +35,11 @@ class AssetRead(BaseModel):
 class KeyIn(BaseModel):
     # Ed25519 공개키 (base64, 32바이트 → 44자)
     public_key: str = Field(min_length=1, max_length=128)
+
+
+class GroupIn(BaseModel):
+    # 자산 그룹명. 빈 문자열이면 그룹 해제(미분류).
+    group: str = Field(default="", max_length=64)
 
 
 class PackageIn(BaseModel):

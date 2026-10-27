@@ -49,6 +49,7 @@ function Overview({ asset }: { asset: Asset }) {
     ['호스트', asset.hostname],
     ['OS', `${asset.os} ${asset.os_version}`],
     ['역할', asset.role || '-'],
+    ['그룹', asset.group || '-'],
     ['관리 여부', asset.managed ? '관리 중' : '미관리'],
     ['에이전트 상태', asset.agent_status],
     ['공개키 등록', asset.public_key ? '예' : '아니오'],
@@ -115,6 +116,21 @@ function AssetActions({ asset }: { asset: Asset }) {
   return (
     <div>
       <div className="section-title">공개키</div>
+      <div className="hint">
+        <strong>공개키 배포 가이드</strong>
+        <ol>
+          <li>
+            대상 시스템에서 에이전트 키 생성:
+            <code>lejusec-agent --keygen agent.key</code> → 출력된 <em>공개키</em>를 복사
+          </li>
+          <li>아래 입력란에 공개키(base64)를 붙여넣고 등록</li>
+          <li>
+            에이전트 실행 시 개인키로 서명 전송:
+            <code>lejusec-agent --server &lt;URL&gt; --asset-id {asset.id} --key agent.key</code>
+          </li>
+        </ol>
+        <span className="muted">개인키(agent.key)는 대상 시스템에만 보관하고 서버로 전송하지 않습니다.</span>
+      </div>
       <div className="toolbar">
         <input
           className="input"

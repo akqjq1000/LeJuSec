@@ -617,6 +617,67 @@ button:disabled {
   width: 96px;
 }
 
+/* ---- Hint box ---- */
+.hint {
+  background: var(--accent-weak);
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
+  border-radius: var(--r-md);
+  padding: var(--s-3) var(--s-4);
+  font-size: 13px;
+  margin-bottom: var(--s-3);
+}
+.hint strong {
+  display: block;
+  margin-bottom: var(--s-2);
+}
+.hint ol {
+  margin: 0 0 var(--s-2);
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+}
+.hint code {
+  display: inline-block;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 1px 6px;
+  margin: 2px 0;
+  font-family: ui-monospace, 'Cascadia Code', 'Fira Code', monospace;
+  font-size: 12px;
+  word-break: break-all;
+}
+
+/* ---- Asset group table ---- */
+.group-sep td {
+  background: var(--panel-2);
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--muted);
+}
+.group-edit {
+  display: inline-flex;
+  gap: var(--s-1);
+  align-items: center;
+  flex-wrap: wrap;
+}
+.link-btn {
+  background: transparent;
+  border: 1px dashed var(--border-strong);
+  padding: 2px 8px;
+  color: var(--text);
+  font-size: 13px;
+}
+.link-btn:hover {
+  border-style: solid;
+  border-color: var(--accent);
+  color: var(--accent);
+  background: transparent;
+}
+
 /* ---- Modal ---- */
 .modal-overlay {
   position: fixed;

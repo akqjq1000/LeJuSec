@@ -51,3 +51,24 @@ def test_list_and_deregister(client: TestClient) -> None:
 
 def test_get_missing_404(client: TestClient) -> None:
     assert client.get("/assets/9999").status_code == 404
+
+
+def test_group_on_register_and_update(client: TestClient) -> None:
+    # 등록 시 그룹 지정
+    resp = client.post("/assets", json={"hostname": "g-01", "group": "운영-웹"})
+    assert resp.status_code == 201, resp.text
+    asset_id = resp.json()["id"]
+    assert resp.json()["group"] == "운영-웹"
+
+    # 기존 자산 그룹 변경
+    resp = client.put(f"/assets/{asset_id}/group", json={"group": "DB"})
+    assert resp.status_code == 200
+    assert resp.json()["group"] == "DB"
+
+    # 그룹 목록(중복 제거)
+    client.post("/assets", json={"hostname": "g-02", "group": "DB"})
+    groups = client.get("/assets/groups").json()
+    assert groups == ["DB"]
+
+    # 그룹 해제(빈 값)
+    assert client.put(f"/assets/{asset_id}/group", json={"group": ""}).json()["group"] == ""
