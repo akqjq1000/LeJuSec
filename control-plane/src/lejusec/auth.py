@@ -22,7 +22,7 @@ from lejusec.models import AuditLogRow
 audit_log = logging.getLogger("lejusec.audit")
 
 _WRITE_METHODS = frozenset({"POST", "PUT", "PATCH", "DELETE"})
-_OPEN_PATHS = frozenset({"/healthz", "/docs", "/openapi.json", "/redoc"})
+_OPEN_PATHS = frozenset({"/healthz", "/docs", "/openapi.json", "/redoc", "/install.sh"})
 
 
 def _is_agent_signed(request: Request) -> bool:

@@ -30,8 +30,10 @@ class Settings(BaseSettings):
     vector_db_url: str = "http://localhost:6333"
     log_level: str = "INFO"
 
-    # 서버 바인드
-    host: str = "127.0.0.1"
+    # 서버 바인드. 기본 0.0.0.0 — 다른 호스트의 에이전트가 접속할 수 있도록 모든
+    # 인터페이스에 바인드한다. 루프백만 열려면 LEJUSEC_HOST=127.0.0.1 로 덮어쓴다.
+    # 운영 환경에서는 방화벽/TLS로 접근을 제한한다.
+    host: str = "0.0.0.0"
     port: int = 8000
 
     # mTLS: 세 값이 모두 설정되면 상호 TLS(클라이언트 인증서 요구)로 기동한다.

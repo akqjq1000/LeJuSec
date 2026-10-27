@@ -5,9 +5,11 @@
 
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from importlib import resources
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import PlainTextResponse
 
 from lejusec import __version__
 from lejusec.api.assets import router as assets_router
@@ -58,3 +60,16 @@ app.include_router(operator_router)
 def healthz() -> dict[str, str]:
     """헬스체크 엔드포인트."""
     return {"status": "ok", "version": __version__}
+
+
+@app.get("/install.sh", response_class=PlainTextResponse)
+def install_script(request: Request) -> str:
+    """에이전트 원샷 설치 스크립트. 대상 시스템에서 한 줄로 실행한다:
+
+        curl -fsSL <이 주소>/install.sh | sudo bash -s -- --group 운영-웹
+
+    스크립트의 서버 주소 자리표시자를 이 요청의 베이스 URL로 치환해 내려준다.
+    """
+    script = resources.files("lejusec.assets").joinpath("install-agent.sh").read_text("utf-8")
+    base = str(request.base_url).rstrip("/")
+    return script.replace("@@DEFAULT_SERVER@@", base)

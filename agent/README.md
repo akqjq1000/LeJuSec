@@ -17,6 +17,38 @@ go run ./cmd/agent --version
 go run ./cmd/agent                     # 인벤토리를 JSON으로 출력
 ```
 
+## 원샷 설치 (권장)
+
+대상(점검받을) 시스템에서 **한 줄**로 설치·등록·실행·자동 시작까지 끝낸다.
+컨트롤 플레인이 설치 스크립트를 `/install.sh` 로 제공하며, 서버 주소는 자동으로 채워진다.
+
+```bash
+# 인증 비활성(개발)
+curl -fsSL http://<컨트롤플레인>:8000/install.sh | sudo bash -s -- --group 운영-웹
+
+# 인증 활성 — admin 운영자 토큰 전달
+curl -fsSL http://<컨트롤플레인>:8000/install.sh | sudo bash -s -- --token <admin-token> --group 운영-웹
+
+# mTLS
+curl -fsSL https://<컨트롤플레인>:8000/install.sh | sudo bash -s -- --token <admin-token> \
+  --ca-cert /etc/lejusec/ca.crt --client-cert /etc/lejusec/client.crt --client-key /etc/lejusec/client.key
+```
+
+스크립트가 수행하는 일: 에이전트 바이너리 내려받기(GitHub 릴리스, 아키텍처 자동 판별)
+→ `/usr/local/bin/lejusec-agent` 설치 → Ed25519 키 생성 → 자산 등록 → 공개키 등록
+→ 설정 생성 → 첫 인벤토리 전송 → systemd 타이머로 주기 실행 등록.
+멱등: 같은 호스트명이면 기존 자산을 재사용하고 공개키만 갱신한다.
+
+생성물: `/etc/lejusec/agent.env`(설정), `/etc/lejusec/agent-run.sh`(실행 래퍼),
+`lejusec-agent.timer`(주기 실행). 이후 수동 실행은 래퍼로 한다 — `agent-run.sh`(인벤토리),
+`agent-run.sh --poll`(명령 실행), `agent-run.sh --apply`(조치 적용).
+
+주요 옵션: `--group/--role`(자산 분류), `--poll-interval 15min`(주기), `--no-systemd`(1회 등록만),
+`--binary-url`/`--agent-bin`(바이너리 직접 지정), `--install-dir`/`--config-dir`.
+설정 형식은 [agent.env.example](agent.env.example) 참고.
+
+아래는 바이너리를 직접 다룰 때의 수동 절차다.
+
 ## 서명 전송
 
 ```bash
