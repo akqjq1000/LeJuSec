@@ -101,7 +101,7 @@ def main() -> int:
     procs: list[tuple[str, subprocess.Popen]] = []
 
     if not opts.no_cp:
-        print("▶ 컨트롤 플레인 (http%s://127.0.0.1:8000)" % ("s" if opts.tls else ""))
+        print("▶ 컨트롤 플레인 (http%s://0.0.0.0:8000 · 접속 http%s://127.0.0.1:8000)" % (("s", "s") if opts.tls else ("", "")))
         procs.append(
             (
                 "cp",

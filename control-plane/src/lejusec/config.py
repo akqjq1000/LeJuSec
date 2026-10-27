@@ -30,9 +30,15 @@ class Settings(BaseSettings):
     vector_db_url: str = "http://localhost:6333"
     log_level: str = "INFO"
 
-    # 서버 바인드
-    host: str = "127.0.0.1"
+    # 서버 바인드. 기본 0.0.0.0 — 다른 호스트의 에이전트가 접속할 수 있도록 모든
+    # 인터페이스에 바인드한다. 루프백만 열려면 LEJUSEC_HOST=127.0.0.1 로 덮어쓴다.
+    # 운영 환경에서는 방화벽/TLS로 접근을 제한한다.
+    host: str = "0.0.0.0"
     port: int = 8000
+
+    # 에이전트 바이너리 배포 디렉터리(GET /agent/{name} 로 제공). 비우면 저장소 루트의
+    # dist/ 를 쓴다. `make agent-dist` 로 linux/amd64·arm64 바이너리를 여기에 만든다.
+    agent_dist_dir: str = ""
 
     # mTLS: 세 값이 모두 설정되면 상호 TLS(클라이언트 인증서 요구)로 기동한다.
     tls_certfile: str = ""
@@ -59,6 +65,14 @@ class Settings(BaseSettings):
     sandbox_backend: str = "dry-run"
     sandbox_image: str = "ubuntu:24.04"
     sandbox_timeout: int = 120
+
+    @property
+    def agent_dist_path(self) -> Path:
+        """에이전트 바이너리 배포 디렉터리(기본: 저장소 루트의 dist/)."""
+        if self.agent_dist_dir:
+            return Path(self.agent_dist_dir)
+        # config.py → control-plane/src/lejusec/config.py 이므로 parents[3] == 저장소 루트.
+        return Path(__file__).resolve().parents[3] / "dist"
 
     @property
     def cors_origin_list(self) -> list[str]:

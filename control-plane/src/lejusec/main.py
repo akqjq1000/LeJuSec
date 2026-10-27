@@ -3,11 +3,14 @@
 헬스체크 + 자산 CMDB(등록/지정/해제). 오케스트레이터·RAG는 로드맵에 따라 추가된다.
 """
 
+import re
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from importlib import resources
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, PlainTextResponse
 
 from lejusec import __version__
 from lejusec.api.assets import router as assets_router
@@ -58,3 +61,35 @@ app.include_router(operator_router)
 def healthz() -> dict[str, str]:
     """헬스체크 엔드포인트."""
     return {"status": "ok", "version": __version__}
+
+
+@app.get("/install.sh", response_class=PlainTextResponse)
+def install_script(request: Request) -> str:
+    """에이전트 원샷 설치 스크립트. 대상 시스템에서 한 줄로 실행한다:
+
+        curl -fsSL <이 주소>/install.sh | sudo bash -s -- --group 운영-웹
+
+    스크립트의 서버 주소 자리표시자를 이 요청의 베이스 URL로 치환해 내려준다.
+    """
+    script = resources.files("lejusec.assets").joinpath("install-agent.sh").read_text("utf-8")
+    base = str(request.base_url).rstrip("/")
+    return script.replace("@@DEFAULT_SERVER@@", base)
+
+
+# 에이전트 바이너리 파일명 형식: lejusec-agent-<os>-<arch> (경로 조작 방지).
+_AGENT_BIN_RE = re.compile(r"^lejusec-agent-[a-z0-9]+-[a-z0-9]+$")
+
+
+@app.get("/agent/{filename}")
+def agent_binary(filename: str) -> FileResponse:
+    """빌드된 에이전트 바이너리를 제공한다(설치 스크립트가 내려받음).
+
+    `make agent-dist` 로 만든 dist/lejusec-agent-linux-{amd64,arm64} 를 서빙한다.
+    디렉터리에 바이너리가 없으면 404 — 설치 스크립트는 GitHub 릴리스로 폴백한다.
+    """
+    if not _AGENT_BIN_RE.match(filename):
+        raise HTTPException(status_code=404, detail="not found")
+    path = settings.agent_dist_path / filename
+    if not path.is_file():
+        raise HTTPException(status_code=404, detail="agent binary not published")
+    return FileResponse(path, media_type="application/octet-stream", filename=filename)
