@@ -5,7 +5,12 @@
     "category": "1. 계정 관리",
     "title": "root 계정 원격 접속 제한",
     "severity": "high",
-    "rationale": "root 계정의 직접 원격 접속(Telnet, 원격 로그인 등)을 허용하면 무차별 대입(Brute Force)·사전(Dictionary) 공격의 표적이 되고 책임 추적성이 약화된다. 원격 접속은 일반 계정으로만 허용하고 권한 상승(su/sudo)을 사용하며, sshd_config의 PermitRootLogin을 no로, /etc/securetty·/etc/default/login의 CONSOLE 설정으로 콘솔 접속만 허용한다."
+    "rationale": "root 계정의 직접 원격 접속(Telnet, 원격 로그인 등)을 허용하면 무차별 대입(Brute Force)·사전(Dictionary) 공격의 표적이 되고 책임 추적성이 약화된다. 원격 접속은 일반 계정으로만 허용하고 권한 상승(su/sudo)을 사용하며, sshd_config의 PermitRootLogin을 no로, /etc/securetty·/etc/default/login의 CONSOLE 설정으로 콘솔 접속만 허용한다.",
+    "purpose": "원격 서비스에서 root 계정의 직접 접속을 차단해 접근 통제와 책임 추적성을 확보한다.",
+    "threat": "root 직접 원격 접속을 허용하면 무차별 대입·사전 공격의 표적이 되고, 탈취 시 시스템 전체가 즉시 장악된다.",
+    "criteria": "양호: 원격 접속 시 root 직접 로그인이 제한됨(PermitRootLogin no, 콘솔만 허용). 취약: root로 원격 직접 로그인 가능.",
+    "target": "SOLARIS, LINUX, AIX, HP-UX",
+    "reference": "/etc/ssh/sshd_config(PermitRootLogin), /etc/securetty, /etc/default/login(CONSOLE)"
   },
   {
     "id": "KISA-U-02",
@@ -13,7 +18,12 @@
     "category": "1. 계정 관리",
     "title": "패스워드 복잡성 설정",
     "severity": "high",
-    "rationale": "길이가 짧거나 단순한 패스워드는 추측·크래킹에 취약하다. 최소 길이(PASSLENGTH), 영문 대/소문자·숫자·특수문자 포함(MINUPPER, MINLOWER, MINDIGIT, MINSPECIAL) 등 복잡성 정책을 /etc/default/passwd, /etc/security/pwquality.conf, pam_cracklib/pam_pwquality로 강제한다."
+    "rationale": "길이가 짧거나 단순한 패스워드는 추측·크래킹에 취약하다. 최소 길이(PASSLENGTH), 영문 대/소문자·숫자·특수문자 포함(MINUPPER, MINLOWER, MINDIGIT, MINSPECIAL) 등 복잡성 정책을 /etc/default/passwd, /etc/security/pwquality.conf, pam_cracklib/pam_pwquality로 강제한다.",
+    "purpose": "유추·크래킹이 어려운 패스워드를 강제한다.",
+    "threat": "단순·짧은 패스워드는 추측·사전·무차별 대입 공격으로 쉽게 탈취된다.",
+    "criteria": "양호: 최소 길이와 영문 대/소문자·숫자·특수문자 조합 정책이 적용됨. 취약: 복잡성 정책 미설정.",
+    "target": "SOLARIS, LINUX, AIX, HP-UX",
+    "reference": "/etc/security/pwquality.conf, pam_pwquality/pam_cracklib, /etc/default/passwd"
   },
   {
     "id": "KISA-U-03",
@@ -21,7 +31,12 @@
     "category": "1. 계정 관리",
     "title": "계정 잠금 임계값 설정",
     "severity": "high",
-    "rationale": "로그인 실패 횟수 제한이 없으면 무차별 대입 공격이 가능하다. pam_tally2/pam_faillock(RETRIES) 또는 /etc/default/login으로 연속 실패 임계값(예: 5회)과 계정 잠금을 설정해 자동화된 패스워드 추측을 차단한다."
+    "rationale": "로그인 실패 횟수 제한이 없으면 무차별 대입 공격이 가능하다. pam_tally2/pam_faillock(RETRIES) 또는 /etc/default/login으로 연속 실패 임계값(예: 5회)과 계정 잠금을 설정해 자동화된 패스워드 추측을 차단한다.",
+    "purpose": "로그인 실패 횟수를 제한해 자동화된 패스워드 추측을 차단한다.",
+    "threat": "실패 임계값이 없으면 무차별 대입으로 반복 시도해 패스워드를 탈취할 수 있다.",
+    "criteria": "양호: 연속 실패 임계값(예: 5회)과 계정 잠금이 설정됨. 취약: 실패 횟수 제한 없음.",
+    "target": "SOLARIS, LINUX, AIX, HP-UX",
+    "reference": "pam_faillock/pam_tally2, /etc/default/login(RETRIES)"
   },
   {
     "id": "KISA-U-04",
@@ -29,7 +44,12 @@
     "category": "1. 계정 관리",
     "title": "패스워드 파일 보호",
     "severity": "high",
-    "rationale": "패스워드가 /etc/passwd에 평문/해시로 노출되면 유출 시 크래킹 위험이 크다. 쉐도우 패스워드(pwconv)로 암호화된 패스워드를 /etc/shadow(또는 /etc/security/passwd, TCB)로 분리하고 권한을 제한한다."
+    "rationale": "패스워드가 /etc/passwd에 평문/해시로 노출되면 유출 시 크래킹 위험이 크다. 쉐도우 패스워드(pwconv)로 암호화된 패스워드를 /etc/shadow(또는 /etc/security/passwd, TCB)로 분리하고 권한을 제한한다.",
+    "purpose": "패스워드를 쉐도우로 분리·암호화해 노출을 막는다.",
+    "threat": "/etc/passwd에 패스워드가 노출되면 유출 시 오프라인 크래킹으로 복원될 수 있다.",
+    "criteria": "양호: 쉐도우 패스워드 적용(암호화 저장, 분리). 취약: /etc/passwd에 평문/해시 노출.",
+    "target": "SOLARIS, LINUX, AIX, HP-UX",
+    "reference": "/etc/passwd, /etc/shadow, pwconv"
   },
   {
     "id": "KISA-U-05",
@@ -37,7 +57,12 @@
     "category": "1. 계정 관리",
     "title": "root 이외의 UID가 '0' 금지",
     "severity": "medium",
-    "rationale": "UID 0은 root와 동일한 최고 권한을 의미한다. root 외의 계정에 UID 0이 부여되면 권한 우회·관리 포인트 분산이 발생하므로 /etc/passwd를 점검해 root만 UID 0을 갖도록 usermod로 조정한다."
+    "rationale": "UID 0은 root와 동일한 최고 권한을 의미한다. root 외의 계정에 UID 0이 부여되면 권한 우회·관리 포인트 분산이 발생하므로 /etc/passwd를 점검해 root만 UID 0을 갖도록 usermod로 조정한다.",
+    "purpose": "root 외 계정에 UID 0이 부여되지 않도록 한다.",
+    "threat": "UID 0 계정은 root와 동일한 최고 권한을 가져 권한 우회·관리 분산을 유발한다.",
+    "criteria": "양호: UID 0 계정이 root뿐임. 취약: root 외 계정에 UID 0 존재.",
+    "target": "SOLARIS, LINUX, AIX, HP-UX",
+    "reference": "/etc/passwd, usermod"
   },
   {
     "id": "KISA-U-06",
@@ -45,7 +70,12 @@
     "category": "1. 계정 관리",
     "title": "root 계정 su 제한",
     "severity": "medium",
-    "rationale": "su 명령을 모든 사용자가 사용할 수 있으면 패스워드 추측을 통한 root 탈취 시도가 쉬워진다. PAM(pam_wheel.so)과 wheel 그룹을 사용해 지정된 관리 계정만 su로 root 전환이 가능하도록 /etc/group·/etc/pam.d/su를 설정한다."
+    "rationale": "su 명령을 모든 사용자가 사용할 수 있으면 패스워드 추측을 통한 root 탈취 시도가 쉬워진다. PAM(pam_wheel.so)과 wheel 그룹을 사용해 지정된 관리 계정만 su로 root 전환이 가능하도록 /etc/group·/etc/pam.d/su를 설정한다.",
+    "purpose": "su 명령 사용을 특정 관리 그룹으로 제한한다.",
+    "threat": "모든 사용자가 su를 쓸 수 있으면 패스워드 추측을 통한 root 탈취가 쉬워진다.",
+    "criteria": "양호: wheel 등 지정 그룹만 su 가능(pam_wheel). 취약: 모든 사용자가 su 사용 가능.",
+    "target": "SOLARIS, LINUX, AIX, HP-UX",
+    "reference": "/etc/pam.d/su(pam_wheel.so), /etc/group(wheel)"
   },
   {
     "id": "KISA-U-07",
@@ -53,7 +83,12 @@
     "category": "1. 계정 관리",
     "title": "불필요한 계정 제거",
     "severity": "low",
-    "rationale": "uucp, nuucp, lp 등 사용하지 않는 기본/임시 계정은 공격 표면이 된다. 로그인 이력(last)을 확인하고 불필요한 계정을 userdel/rmuser로 제거해 오용을 예방한다."
+    "rationale": "uucp, nuucp, lp 등 사용하지 않는 기본/임시 계정은 공격 표면이 된다. 로그인 이력(last)을 확인하고 불필요한 계정을 userdel/rmuser로 제거해 오용을 예방한다.",
+    "purpose": "사용하지 않는 기본·임시 계정을 제거한다.",
+    "threat": "불필요한 계정(uucp, nuucp 등)은 공격 표면이 되고 오용될 수 있다.",
+    "criteria": "양호: 불필요한 기본 계정이 제거/잠김. 취약: 사용하지 않는 계정이 로그인 가능 상태로 존재.",
+    "target": "SOLARIS, LINUX, AIX, HP-UX",
+    "reference": "/etc/passwd, userdel/rmuser, last"
   },
   {
     "id": "KISA-U-08",
@@ -61,7 +96,12 @@
     "category": "1. 계정 관리",
     "title": "관리자 그룹에 최소한의 계정 포함",
     "severity": "low",
-    "rationale": "관리자(root/wheel) 그룹에 불필요한 계정이 포함되면 권한 상승 경로가 늘어난다. /etc/group을 점검해 꼭 필요한 관리 계정만 그룹에 두고 gpasswd로 관리한다."
+    "rationale": "관리자(root/wheel) 그룹에 불필요한 계정이 포함되면 권한 상승 경로가 늘어난다. /etc/group을 점검해 꼭 필요한 관리 계정만 그룹에 두고 gpasswd로 관리한다.",
+    "purpose": "관리자 그룹에 꼭 필요한 계정만 포함시킨다.",
+    "threat": "관리자 그룹에 불필요한 계정이 있으면 권한 상승 경로가 늘어난다.",
+    "criteria": "양호: 관리(root/wheel) 그룹에 필수 계정만 존재. 취약: 불필요한 계정이 관리자 그룹에 포함.",
+    "target": "SOLARIS, LINUX, AIX, HP-UX",
+    "reference": "/etc/group, gpasswd"
   },
   {
     "id": "KISA-U-09",
@@ -69,7 +109,12 @@
     "category": "1. 계정 관리",
     "title": "계정이 존재하지 않는 GID 금지",
     "severity": "medium",
-    "rationale": "소속 사용자가 없는 불필요한 그룹(GID)이 /etc/group에 남아 있으면 관리상 혼란과 권한 오용 소지가 있다. /etc/passwd·/etc/group을 대조해 사용하지 않는 그룹을 groupdel로 제거한다."
+    "rationale": "소속 사용자가 없는 불필요한 그룹(GID)이 /etc/group에 남아 있으면 관리상 혼란과 권한 오용 소지가 있다. /etc/passwd·/etc/group을 대조해 사용하지 않는 그룹을 groupdel로 제거한다.",
+    "purpose": "소속 사용자가 없는 불필요한 그룹(GID)을 정리한다.",
+    "threat": "사용하지 않는 그룹이 남아 있으면 관리 혼란과 권한 오용 소지가 있다.",
+    "criteria": "양호: 불필요한 그룹이 없음. 취약: 소속 계정이 없는 불필요한 그룹 존재.",
+    "target": "SOLARIS, LINUX, AIX, HP-UX",
+    "reference": "/etc/group, /etc/gshadow, groupdel"
   },
   {
     "id": "KISA-U-10",
@@ -77,7 +122,12 @@
     "category": "1. 계정 관리",
     "title": "동일한 UID 금지",
     "severity": "medium",
-    "rationale": "서로 다른 계정이 동일한 UID를 공유하면 파일 소유권과 감사 추적이 뒤섞여 책임 추적성이 사라진다. /etc/passwd를 점검해 각 계정이 고유한 UID를 갖도록 usermod/chuser로 정정한다."
+    "rationale": "서로 다른 계정이 동일한 UID를 공유하면 파일 소유권과 감사 추적이 뒤섞여 책임 추적성이 사라진다. /etc/passwd를 점검해 각 계정이 고유한 UID를 갖도록 usermod/chuser로 정정한다.",
+    "purpose": "계정마다 고유한 UID를 사용하도록 한다.",
+    "threat": "UID가 중복되면 파일 소유권·감사 추적이 뒤섞여 책임 추적성이 사라진다.",
+    "criteria": "양호: 모든 계정의 UID가 고유함. 취약: 둘 이상의 계정이 동일 UID 사용.",
+    "target": "SOLARIS, LINUX, AIX, HP-UX",
+    "reference": "/etc/passwd, usermod/chuser"
   },
   {
     "id": "KISA-U-11",
@@ -85,7 +135,12 @@
     "category": "1. 계정 관리",
     "title": "사용자 shell 점검",
     "severity": "medium",
-    "rationale": "adm, sys, daemon 등 로그인이 필요 없는 시스템 계정에 로그인 가능한 쉘이 부여되면 악용될 수 있다. 해당 계정의 쉘을 /bin/false 또는 /sbin/nologin으로 지정해 로그인을 차단한다."
+    "rationale": "adm, sys, daemon 등 로그인이 필요 없는 시스템 계정에 로그인 가능한 쉘이 부여되면 악용될 수 있다. 해당 계정의 쉘을 /bin/false 또는 /sbin/nologin으로 지정해 로그인을 차단한다.",
+    "purpose": "로그인이 필요 없는 시스템 계정의 쉘을 차단한다.",
+    "threat": "시스템 계정에 로그인 쉘이 있으면 탈취 시 쉘 접근으로 악용된다.",
+    "criteria": "양호: 시스템 계정 쉘이 /bin/false·/sbin/nologin. 취약: 불필요 계정에 로그인 가능 쉘 부여.",
+    "target": "SOLARIS, LINUX, AIX, HP-UX",
+    "reference": "/etc/passwd, /sbin/nologin, /bin/false"
   },
   {
     "id": "KISA-U-12",
@@ -93,7 +148,12 @@
     "category": "1. 계정 관리",
     "title": "Session Timeout 설정",
     "severity": "low",
-    "rationale": "유휴 세션이 장시간 유지되면 자리를 비운 사이 세션 탈취 위험이 있다. 쉘별로 유휴 제한(TMOUT, autologout)을 /etc/profile·/etc/csh.cshrc 등에 설정해 일정 시간 후 자동 로그아웃되게 한다."
+    "rationale": "유휴 세션이 장시간 유지되면 자리를 비운 사이 세션 탈취 위험이 있다. 쉘별로 유휴 제한(TMOUT, autologout)을 /etc/profile·/etc/csh.cshrc 등에 설정해 일정 시간 후 자동 로그아웃되게 한다.",
+    "purpose": "유휴 세션을 일정 시간 후 자동 종료한다.",
+    "threat": "유휴 세션이 장시간 유지되면 자리 비운 사이 세션 탈취 위험이 있다.",
+    "criteria": "양호: 세션 타임아웃(TMOUT 등) 설정됨. 취약: 유휴 세션 제한 없음.",
+    "target": "SOLARIS, LINUX, AIX, HP-UX",
+    "reference": "/etc/profile(TMOUT), /etc/csh.cshrc(autologout)"
   },
   {
     "id": "KISA-U-13",
@@ -101,16 +161,25 @@
     "category": "1. 계정 관리",
     "title": "안전한 패스워드 저장 해시 알고리즘 사용",
     "severity": "medium",
-    "rationale": "패스워드 해시에 MD5/DES 등 취약한 알고리즘을 사용하면 유출 시 평문 복원이 쉽다. SHA-256/SHA-512 등 강한 해시를 사용하도록 /etc/login.defs(ENCRYPT_METHOD), /etc/security/policy.conf(CRYPT_DEFAULT)를 설정한다."
+    "rationale": "패스워드 해시에 MD5/DES 등 취약한 알고리즘을 사용하면 유출 시 평문 복원이 쉽다. SHA-256/SHA-512 등 강한 해시를 사용하도록 /etc/login.defs(ENCRYPT_METHOD), /etc/security/policy.conf(CRYPT_DEFAULT)를 설정한다.",
+    "purpose": "패스워드 저장에 강한 해시 알고리즘을 사용한다.",
+    "threat": "MD5/DES 등 취약 해시는 유출 시 평문 복원이 쉽다.",
+    "criteria": "양호: SHA-256/512 등 강한 해시 사용. 취약: 취약한 해시 알고리즘 사용.",
+    "target": "SOLARIS, LINUX, AIX, HP-UX",
+    "reference": "/etc/login.defs(ENCRYPT_METHOD), /etc/security/policy.conf(CRYPT_DEFAULT)"
   },
-
   {
     "id": "KISA-U-14",
     "standard": "KISA",
     "category": "2. 파일 및 디렉터리 관리",
     "title": "PATH 환경변수에 '.' 및 쓰기 가능 경로 포함 제한",
     "severity": "medium",
-    "rationale": "PATH에 현재 디렉터리('.')가 맨 앞/중간에 포함되면 악성 실행 파일이 정상 명령 대신 실행될 수 있다. /etc/profile·.bashrc·.profile 등에서 PATH를 점검해 '.'을 제거하고 쓰기 가능한 비신뢰 경로를 배제한다."
+    "rationale": "PATH에 현재 디렉터리('.')가 맨 앞/중간에 포함되면 악성 실행 파일이 정상 명령 대신 실행될 수 있다. /etc/profile·.bashrc·.profile 등에서 PATH를 점검해 '.'을 제거하고 쓰기 가능한 비신뢰 경로를 배제한다.",
+    "purpose": "PATH 환경변수에 비신뢰 경로가 포함되지 않게 한다.",
+    "threat": "PATH 앞/중간에 '.'이나 쓰기 가능 경로가 있으면 악성 실행 파일이 정상 명령 대신 실행된다.",
+    "criteria": "양호: PATH에 '.'이 선두/중간에 없고 쓰기 가능 비신뢰 경로 미포함. 취약: PATH에 '.' 또는 쓰기 가능 경로 포함.",
+    "target": "SOLARIS, LINUX, AIX, HP-UX",
+    "reference": "/etc/profile, $HOME/.profile, .bashrc, .cshrc"
   },
   {
     "id": "KISA-U-15",
@@ -118,7 +187,12 @@
     "category": "2. 파일 및 디렉터리 관리",
     "title": "소유자가 존재하지 않는 파일 및 디렉터리 제거",
     "severity": "high",
-    "rationale": "소유 사용자/그룹이 삭제되어 UID/GID만 남은 파일(nouser, nogroup)은 새 계정에 의도치 않게 귀속될 수 있다. find으로 탐색해 삭제하거나 올바른 소유자로 재지정한다."
+    "rationale": "소유 사용자/그룹이 삭제되어 UID/GID만 남은 파일(nouser, nogroup)은 새 계정에 의도치 않게 귀속될 수 있다. find으로 탐색해 삭제하거나 올바른 소유자로 재지정한다.",
+    "purpose": "소유자가 없는 파일/디렉터리를 정리한다.",
+    "threat": "nouser/nogroup 파일은 신규 계정에 의도치 않게 귀속되어 정보 노출·권한 오용을 유발한다.",
+    "criteria": "양호: 소유자 없는 파일이 없음. 취약: nouser/nogroup 파일·디렉터리 존재.",
+    "target": "SOLARIS, LINUX, AIX, HP-UX",
+    "reference": "find / -nouser -o -nogroup"
   },
   {
     "id": "KISA-U-16",
@@ -126,7 +200,12 @@
     "category": "2. 파일 및 디렉터리 관리",
     "title": "/etc/passwd 파일 소유자 및 권한 설정",
     "severity": "high",
-    "rationale": "/etc/passwd가 임의로 수정되면 계정·UID·쉘이 변조되어 권한 상승이 가능하다. 소유자를 root로, 권한을 644 이하로 설정해 일반 사용자의 쓰기를 차단한다."
+    "rationale": "/etc/passwd가 임의로 수정되면 계정·UID·쉘이 변조되어 권한 상승이 가능하다. 소유자를 root로, 권한을 644 이하로 설정해 일반 사용자의 쓰기를 차단한다.",
+    "purpose": "/etc/passwd의 소유자·권한을 적절히 설정한다.",
+    "threat": "일반 사용자가 /etc/passwd를 수정하면 계정·UID·쉘 변조로 권한 상승이 가능하다.",
+    "criteria": "양호: 소유자 root, 권한 644 이하. 취약: 일반 사용자 쓰기 가능.",
+    "target": "SOLARIS, LINUX, AIX, HP-UX",
+    "reference": "/etc/passwd (root:root, 644)"
   },
   {
     "id": "KISA-U-17",
@@ -134,7 +213,12 @@
     "category": "2. 파일 및 디렉터리 관리",
     "title": "시스템 시작 스크립트 소유자 및 권한 설정",
     "severity": "medium",
-    "rationale": "부팅 시 실행되는 시작 스크립트(/etc/rc.*, /etc/rc.d/, init/systemd 유닛)가 변조되면 부팅 때마다 악성 코드가 실행된다. 소유자를 root로, world-writable 권한을 제거해 변조를 방지한다."
+    "rationale": "부팅 시 실행되는 시작 스크립트(/etc/rc.*, /etc/rc.d/, init/systemd 유닛)가 변조되면 부팅 때마다 악성 코드가 실행된다. 소유자를 root로, world-writable 권한을 제거해 변조를 방지한다.",
+    "purpose": "시스템 시작 스크립트의 소유자·권한을 보호한다.",
+    "threat": "시작 스크립트가 변조되면 부팅 때마다 악성 코드가 실행된다.",
+    "criteria": "양호: 시작 스크립트 소유자 root, world-writable 아님. 취약: 변조 가능 권한.",
+    "target": "SOLARIS, LINUX, AIX, HP-UX",
+    "reference": "/etc/rc.*, /etc/rc.d/, systemd 유닛"
   },
   {
     "id": "KISA-U-18",
@@ -142,7 +226,12 @@
     "category": "2. 파일 및 디렉터리 관리",
     "title": "/etc/shadow 파일 소유자 및 권한 설정",
     "severity": "high",
-    "rationale": "/etc/shadow(또는 /etc/security/passwd, TCB auth)는 암호화된 패스워드를 담아 노출 시 크래킹 대상이 된다. 소유자를 root로, 권한을 400/600으로 제한해 일반 사용자 접근을 차단한다."
+    "rationale": "/etc/shadow(또는 /etc/security/passwd, TCB auth)는 암호화된 패스워드를 담아 노출 시 크래킹 대상이 된다. 소유자를 root로, 권한을 400/600으로 제한해 일반 사용자 접근을 차단한다.",
+    "purpose": "/etc/shadow의 소유자·권한을 엄격히 제한한다.",
+    "threat": "shadow가 노출되면 암호화 패스워드가 오프라인 크래킹 대상이 된다.",
+    "criteria": "양호: 소유자 root, 권한 400/600. 취약: 일반 사용자 읽기 가능.",
+    "target": "SOLARIS, LINUX, AIX, HP-UX",
+    "reference": "/etc/shadow (root:root, 400)"
   },
   {
     "id": "KISA-U-19",
@@ -150,7 +239,12 @@
     "category": "2. 파일 및 디렉터리 관리",
     "title": "/etc/hosts 파일 소유자 및 권한 설정",
     "severity": "medium",
-    "rationale": "/etc/hosts가 변조되면 도메인-IP 매핑이 조작되어 파밍(Pharming)·DNS 우회 공격에 악용될 수 있다. 소유자를 root로, 권한을 600으로 설정한다."
+    "rationale": "/etc/hosts가 변조되면 도메인-IP 매핑이 조작되어 파밍(Pharming)·DNS 우회 공격에 악용될 수 있다. 소유자를 root로, 권한을 600으로 설정한다.",
+    "purpose": "/etc/hosts의 소유자·권한을 보호한다.",
+    "threat": "hosts 변조 시 도메인-IP 매핑이 조작되어 파밍·접속 우회에 악용된다.",
+    "criteria": "양호: 소유자 root, 권한 600. 취약: 일반 사용자 쓰기 가능.",
+    "target": "SOLARIS, LINUX, AIX, HP-UX",
+    "reference": "/etc/hosts (root:root, 600)"
   },
   {
     "id": "KISA-U-20",
@@ -158,7 +252,12 @@
     "category": "2. 파일 및 디렉터리 관리",
     "title": "/etc/(x)inetd.conf 파일 소유자 및 권한 설정",
     "severity": "medium",
-    "rationale": "(x)inetd.conf 및 /etc/xinetd.d/ 설정이 변조되면 임의 서비스가 활성화되거나 백도어가 등록될 수 있다. 소유자를 root로, 권한을 600으로 제한한다."
+    "rationale": "(x)inetd.conf 및 /etc/xinetd.d/ 설정이 변조되면 임의 서비스가 활성화되거나 백도어가 등록될 수 있다. 소유자를 root로, 권한을 600으로 제한한다.",
+    "purpose": "(x)inetd 설정 파일의 소유자·권한을 보호한다.",
+    "threat": "변조 시 임의 서비스 활성화·백도어 등록이 가능하다.",
+    "criteria": "양호: 소유자 root, 권한 600. 취약: 변조 가능 권한.",
+    "target": "SOLARIS, LINUX, AIX, HP-UX",
+    "reference": "/etc/inetd.conf, /etc/xinetd.conf, /etc/xinetd.d/"
   },
   {
     "id": "KISA-U-21",
@@ -166,7 +265,12 @@
     "category": "2. 파일 및 디렉터리 관리",
     "title": "/etc/(r)syslog.conf 파일 소유자 및 권한 설정",
     "severity": "medium",
-    "rationale": "로그 설정 파일(syslog.conf/rsyslog.conf)이 변조되면 보안 로그가 누락·위조되어 침해 추적이 불가능해진다. 소유자를 root(또는 bin/sys)로, 권한을 640 이하로 설정한다."
+    "rationale": "로그 설정 파일(syslog.conf/rsyslog.conf)이 변조되면 보안 로그가 누락·위조되어 침해 추적이 불가능해진다. 소유자를 root(또는 bin/sys)로, 권한을 640 이하로 설정한다.",
+    "purpose": "syslog 설정 파일의 소유자·권한을 보호한다.",
+    "threat": "로그 설정이 변조되면 보안 로그가 누락·위조되어 침해 추적이 불가능해진다.",
+    "criteria": "양호: 소유자 root(또는 bin/sys), 권한 640 이하. 취약: 변조 가능 권한.",
+    "target": "SOLARIS, LINUX, AIX, HP-UX",
+    "reference": "/etc/syslog.conf, /etc/rsyslog.conf"
   },
   {
     "id": "KISA-U-22",
@@ -174,7 +278,12 @@
     "category": "2. 파일 및 디렉터리 관리",
     "title": "/etc/services 파일 소유자 및 권한 설정",
     "severity": "medium",
-    "rationale": "/etc/services가 변조되면 서비스-포트 매핑이 조작될 수 있다. 소유자를 root(또는 bin/sys)로, 권한을 644 이하로 설정해 임의 수정을 방지한다."
+    "rationale": "/etc/services가 변조되면 서비스-포트 매핑이 조작될 수 있다. 소유자를 root(또는 bin/sys)로, 권한을 644 이하로 설정해 임의 수정을 방지한다.",
+    "purpose": "/etc/services의 소유자·권한을 보호한다.",
+    "threat": "변조 시 서비스-포트 매핑이 조작될 수 있다.",
+    "criteria": "양호: 소유자 root(또는 bin/sys), 권한 644 이하. 취약: 일반 사용자 쓰기 가능.",
+    "target": "SOLARIS, LINUX, AIX, HP-UX",
+    "reference": "/etc/services"
   },
   {
     "id": "KISA-U-23",
@@ -182,7 +291,12 @@
     "category": "2. 파일 및 디렉터리 관리",
     "title": "SUID, SGID, Sticky bit 설정 파일 점검",
     "severity": "high",
-    "rationale": "불필요한 SUID/SGID 파일은 권한 상승(root 획득) 통로가 된다. find으로 SetUID/SetGID 비트가 설정된 파일을 식별해 불필요한 특수 권한을 제거한다."
+    "rationale": "불필요한 SUID/SGID 파일은 권한 상승(root 획득) 통로가 된다. find으로 SetUID/SetGID 비트가 설정된 파일을 식별해 불필요한 특수 권한을 제거한다.",
+    "purpose": "불필요한 SUID/SGID/Sticky bit 설정 파일을 점검한다.",
+    "threat": "불필요한 SUID/SGID 파일은 권한 상승(root 획득) 통로가 된다.",
+    "criteria": "양호: 불필요한 SUID/SGID 비트가 제거됨. 취약: 불필요한 특수 권한 파일 존재.",
+    "target": "SOLARIS, LINUX, AIX, HP-UX",
+    "reference": "find / -perm -4000 -o -perm -2000"
   },
   {
     "id": "KISA-U-24",
@@ -190,7 +304,12 @@
     "category": "2. 파일 및 디렉터리 관리",
     "title": "사용자·시스템 환경파일 소유자 및 권한 설정",
     "severity": "medium",
-    "rationale": ".profile, .cshrc, .bashrc, .bash_profile, .login, .exrc, .netrc 등 환경파일이 타 사용자에 의해 쓰기 가능하면 명령 가로채기·권한 상승이 발생한다. 소유자를 계정 본인/root로, world-writable 권한을 제거한다."
+    "rationale": ".profile, .cshrc, .bashrc, .bash_profile, .login, .exrc, .netrc 등 환경파일이 타 사용자에 의해 쓰기 가능하면 명령 가로채기·권한 상승이 발생한다. 소유자를 계정 본인/root로, world-writable 권한을 제거한다.",
+    "purpose": "사용자·시스템 환경파일의 소유자·권한을 보호한다.",
+    "threat": "환경파일이 타인에게 쓰기 가능하면 명령 가로채기·권한 상승이 발생한다.",
+    "criteria": "양호: 소유자 본인/root, world-writable 아님. 취약: 타 사용자 쓰기 가능.",
+    "target": "SOLARIS, LINUX, AIX, HP-UX",
+    "reference": ".profile, .cshrc, .bashrc, .bash_profile, .login, .exrc, .netrc"
   },
   {
     "id": "KISA-U-25",
@@ -198,7 +317,12 @@
     "category": "2. 파일 및 디렉터리 관리",
     "title": "world writable 파일 점검",
     "severity": "high",
-    "rationale": "누구나 쓸 수 있는(rwxrwxrwx) 파일은 변조·악성 삽입의 대상이 된다. find으로 world-writable 파일을 탐색해 불필요한 쓰기 권한을 제거하거나 사유를 확인한다."
+    "rationale": "누구나 쓸 수 있는(rwxrwxrwx) 파일은 변조·악성 삽입의 대상이 된다. find으로 world-writable 파일을 탐색해 불필요한 쓰기 권한을 제거하거나 사유를 확인한다.",
+    "purpose": "world writable 파일을 점검한다.",
+    "threat": "누구나 쓸 수 있는 파일은 변조·악성 삽입의 대상이 된다.",
+    "criteria": "양호: 불필요한 world-writable 파일이 없음. 취약: 사유 불명의 world-writable 파일 존재.",
+    "target": "SOLARIS, LINUX, AIX, HP-UX",
+    "reference": "find / -perm -2 -type f"
   },
   {
     "id": "KISA-U-26",
@@ -206,7 +330,12 @@
     "category": "2. 파일 및 디렉터리 관리",
     "title": "/dev에 존재하지 않는 device 파일 점검",
     "severity": "medium",
-    "rationale": "/dev에 major/minor 번호가 없는 비정상 파일은 루트킷이 데이터를 은닉하는 수단이 될 수 있다. find으로 /dev 하위의 일반 파일을 탐색해 점검·제거한다."
+    "rationale": "/dev에 major/minor 번호가 없는 비정상 파일은 루트킷이 데이터를 은닉하는 수단이 될 수 있다. find으로 /dev 하위의 일반 파일을 탐색해 점검·제거한다.",
+    "purpose": "/dev에 비정상 device 파일이 없는지 점검한다.",
+    "threat": "major/minor 번호가 없는 /dev 내 일반 파일은 루트킷의 데이터 은닉 수단이 된다.",
+    "criteria": "양호: /dev에 비정상 파일이 없음. 취약: /dev 하위에 일반 파일 존재.",
+    "target": "SOLARIS, LINUX, AIX, HP-UX",
+    "reference": "find /dev -type f"
   },
   {
     "id": "KISA-U-27",
@@ -214,7 +343,12 @@
     "category": "2. 파일 및 디렉터리 관리",
     "title": "$HOME/.rhosts, hosts.equiv 사용 금지",
     "severity": "high",
-    "rationale": ".rhosts·/etc/hosts.equiv 기반 r-command(rlogin, rsh, rexec) 신뢰 관계는 패스워드 없이 접속을 허용해 매우 위험하다. 파일을 제거하거나 소유자 root·권한 600·'+' 설정 금지로 신뢰 접속을 차단한다."
+    "rationale": ".rhosts·/etc/hosts.equiv 기반 r-command(rlogin, rsh, rexec) 신뢰 관계는 패스워드 없이 접속을 허용해 매우 위험하다. 파일을 제거하거나 소유자 root·권한 600·'+' 설정 금지로 신뢰 접속을 차단한다.",
+    "purpose": ".rhosts·hosts.equiv 기반 신뢰 접속을 차단한다.",
+    "threat": "r-command 신뢰 관계는 패스워드 없이 접속을 허용해 매우 위험하다.",
+    "criteria": "양호: 파일이 없거나 소유자 root·권한 600·'+' 미포함. 취약: '+' 설정 또는 느슨한 권한.",
+    "target": "SOLARIS, LINUX, AIX, HP-UX",
+    "reference": "$HOME/.rhosts, /etc/hosts.equiv"
   },
   {
     "id": "KISA-U-28",
@@ -222,7 +356,12 @@
     "category": "2. 파일 및 디렉터리 관리",
     "title": "접속 IP 및 포트 제한",
     "severity": "medium",
-    "rationale": "접속 출발지를 제한하지 않으면 전 세계에서 서비스에 접근할 수 있다. TCP Wrapper(/etc/hosts.allow·hosts.deny)나 IPFilter/iptables로 허용 IP·포트만 접속되도록 제어한다."
+    "rationale": "접속 출발지를 제한하지 않으면 전 세계에서 서비스에 접근할 수 있다. TCP Wrapper(/etc/hosts.allow·hosts.deny)나 IPFilter/iptables로 허용 IP·포트만 접속되도록 제어한다.",
+    "purpose": "접속 출발지 IP·포트를 제한한다.",
+    "threat": "접속 제한이 없으면 전 세계에서 서비스에 접근해 공격 표면이 넓어진다.",
+    "criteria": "양호: TCP Wrapper/방화벽으로 허용 IP만 접속. 취약: 접속 제어 없음(ALL 허용).",
+    "target": "SOLARIS, LINUX, AIX, HP-UX",
+    "reference": "/etc/hosts.allow, /etc/hosts.deny, iptables/IPFilter"
   },
   {
     "id": "KISA-U-29",
@@ -230,7 +369,12 @@
     "category": "2. 파일 및 디렉터리 관리",
     "title": "hosts.lpd 파일 소유자 및 권한 설정",
     "severity": "medium",
-    "rationale": "프린터 접근을 신뢰 호스트 기준으로 허용하는 /etc/hosts.lpd가 변조되면 비인가 출력·접근이 가능하다. 파일을 제거하거나 소유자 root·권한 600으로 설정한다."
+    "rationale": "프린터 접근을 신뢰 호스트 기준으로 허용하는 /etc/hosts.lpd가 변조되면 비인가 출력·접근이 가능하다. 파일을 제거하거나 소유자 root·권한 600으로 설정한다.",
+    "purpose": "hosts.lpd의 소유자·권한을 보호한다.",
+    "threat": "변조 시 비인가 호스트의 프린터 접근이 가능하다.",
+    "criteria": "양호: 파일 제거 또는 소유자 root·권한 600. 취약: 변조 가능 권한.",
+    "target": "SOLARIS, LINUX, AIX, HP-UX",
+    "reference": "/etc/hosts.lpd"
   },
   {
     "id": "KISA-U-30",
@@ -238,7 +382,12 @@
     "category": "2. 파일 및 디렉터리 관리",
     "title": "UMASK 설정",
     "severity": "medium",
-    "rationale": "기본 UMASK가 느슨하면 새로 생성되는 파일이 과도한 권한으로 만들어진다. /etc/profile·/etc/default/login 등에 umask 022(이상)을 설정해 기본 생성 권한을 강화한다."
+    "rationale": "기본 UMASK가 느슨하면 새로 생성되는 파일이 과도한 권한으로 만들어진다. /etc/profile·/etc/default/login 등에 umask 022(이상)을 설정해 기본 생성 권한을 강화한다.",
+    "purpose": "파일 생성 기본 권한(UMASK)을 강화한다.",
+    "threat": "UMASK가 느슨하면 새 파일이 과도한 권한으로 생성된다.",
+    "criteria": "양호: UMASK 022 이상 설정. 취약: 과도하게 느슨한 UMASK.",
+    "target": "SOLARIS, LINUX, AIX, HP-UX",
+    "reference": "/etc/profile, /etc/default/login(umask)"
   },
   {
     "id": "KISA-U-31",
@@ -246,7 +395,12 @@
     "category": "2. 파일 및 디렉터리 관리",
     "title": "홈 디렉터리 소유자 및 권한 설정",
     "severity": "medium",
-    "rationale": "홈 디렉터리가 타 사용자에게 쓰기 가능하면 환경파일 변조·권한 상승이 가능하다. /etc/passwd의 홈 경로를 점검해 소유자를 계정 본인으로, world-writable 권한을 제거한다."
+    "rationale": "홈 디렉터리가 타 사용자에게 쓰기 가능하면 환경파일 변조·권한 상승이 가능하다. /etc/passwd의 홈 경로를 점검해 소유자를 계정 본인으로, world-writable 권한을 제거한다.",
+    "purpose": "홈 디렉터리의 소유자·권한을 보호한다.",
+    "threat": "홈 디렉터리가 타인 쓰기 가능하면 환경파일 변조·권한 상승이 가능하다.",
+    "criteria": "양호: 소유자 본인, world-writable 아님. 취약: 타 사용자 쓰기 가능.",
+    "target": "SOLARIS, LINUX, AIX, HP-UX",
+    "reference": "/etc/passwd(홈 경로)"
   },
   {
     "id": "KISA-U-32",
@@ -254,7 +408,12 @@
     "category": "2. 파일 및 디렉터리 관리",
     "title": "홈 디렉터리로 지정한 디렉터리의 존재 관리",
     "severity": "low",
-    "rationale": "계정의 홈 디렉터리가 실제로 없거나 '/' 등 비정상 경로를 가리키면 예기치 않은 디렉터리에 파일이 생성되어 보안·운영 문제가 발생한다. /etc/passwd의 홈 경로가 올바르게 존재하는지 점검한다."
+    "rationale": "계정의 홈 디렉터리가 실제로 없거나 '/' 등 비정상 경로를 가리키면 예기치 않은 디렉터리에 파일이 생성되어 보안·운영 문제가 발생한다. /etc/passwd의 홈 경로가 올바르게 존재하는지 점검한다.",
+    "purpose": "계정의 홈 디렉터리가 올바르게 존재하는지 점검한다.",
+    "threat": "홈 경로가 없거나 '/' 등 비정상이면 예기치 않은 위치에 파일이 생성된다.",
+    "criteria": "양호: 홈 디렉터리가 올바르게 존재. 취약: 홈 경로 부재 또는 비정상.",
+    "target": "SOLARIS, LINUX, AIX, HP-UX",
+    "reference": "/etc/passwd(홈 경로)"
   },
   {
     "id": "KISA-U-33",
@@ -262,16 +421,25 @@
     "category": "2. 파일 및 디렉터리 관리",
     "title": "숨겨진 파일 및 디렉터리 검색 및 제거",
     "severity": "low",
-    "rationale": "'.'으로 시작하는 숨김 파일/디렉터리는 공격자가 도구·데이터를 은닉하는 수단으로 쓰인다. find으로 비정상 숨김 파일을 탐색해 용도를 확인하고 불필요하면 제거한다."
+    "rationale": "'.'으로 시작하는 숨김 파일/디렉터리는 공격자가 도구·데이터를 은닉하는 수단으로 쓰인다. find으로 비정상 숨김 파일을 탐색해 용도를 확인하고 불필요하면 제거한다.",
+    "purpose": "비정상 숨김 파일/디렉터리를 점검한다.",
+    "threat": "'.' 숨김 파일은 공격자가 도구·데이터를 은닉하는 수단으로 쓰인다.",
+    "criteria": "양호: 비정상 숨김 파일이 없음. 취약: 용도 불명의 숨김 파일 존재.",
+    "target": "SOLARIS, LINUX, AIX, HP-UX",
+    "reference": "find / -name '.*' -type f"
   },
-
   {
     "id": "KISA-U-34",
     "standard": "KISA",
     "category": "3. 서비스 관리",
     "title": "Finger 서비스 비활성화",
     "severity": "medium",
-    "rationale": "Finger 서비스는 사용자 계정·로그인 정보를 외부에 노출해 정보 수집 공격에 악용된다. inetd/xinetd(또는 inetadm)에서 finger 서비스를 비활성화한다."
+    "rationale": "Finger 서비스는 사용자 계정·로그인 정보를 외부에 노출해 정보 수집 공격에 악용된다. inetd/xinetd(또는 inetadm)에서 finger 서비스를 비활성화한다.",
+    "purpose": "불필요한 Finger 서비스를 비활성화한다.",
+    "threat": "Finger는 사용자 계정·로그인 정보를 외부에 노출해 정보 수집에 악용된다.",
+    "criteria": "양호: finger 서비스 비활성화. 취약: finger 서비스 구동.",
+    "target": "SOLARIS, LINUX, AIX, HP-UX",
+    "reference": "/etc/inetd.conf, xinetd(finger), inetadm"
   },
   {
     "id": "KISA-U-35",
@@ -279,7 +447,12 @@
     "category": "3. 서비스 관리",
     "title": "Anonymous FTP 비활성화",
     "severity": "high",
-    "rationale": "익명(anonymous) FTP를 허용하면 비인가 사용자가 파일 업로드/다운로드로 서버를 악용할 수 있다. vsftpd.conf의 anonymous_enable=NO 설정 또는 ftp 계정 제거로 익명 접속을 차단한다."
+    "rationale": "익명(anonymous) FTP를 허용하면 비인가 사용자가 파일 업로드/다운로드로 서버를 악용할 수 있다. vsftpd.conf의 anonymous_enable=NO 설정 또는 ftp 계정 제거로 익명 접속을 차단한다.",
+    "purpose": "Anonymous FTP를 비활성화한다.",
+    "threat": "익명 FTP는 비인가자가 파일 업/다운로드로 서버를 악용하게 한다.",
+    "criteria": "양호: 익명 FTP 차단(anonymous_enable=NO 또는 ftp 계정 제거). 취약: 익명 접속 허용.",
+    "target": "SOLARIS, LINUX, AIX, HP-UX",
+    "reference": "/etc/vsftpd/vsftpd.conf(anonymous_enable), ftp 계정"
   },
   {
     "id": "KISA-U-36",
@@ -287,7 +460,12 @@
     "category": "3. 서비스 관리",
     "title": "r 계열 서비스 비활성화",
     "severity": "high",
-    "rationale": "rlogin, rsh, rexec 등 r-command는 인증이 취약하고 평문 전송이라 스니핑·신뢰관계 악용에 노출된다. inetd/xinetd에서 shell(514)·login(513)·exec(512) 서비스를 비활성화하고 SSH로 대체한다."
+    "rationale": "rlogin, rsh, rexec 등 r-command는 인증이 취약하고 평문 전송이라 스니핑·신뢰관계 악용에 노출된다. inetd/xinetd에서 shell(514)·login(513)·exec(512) 서비스를 비활성화하고 SSH로 대체한다.",
+    "purpose": "r 계열 서비스를 비활성화한다.",
+    "threat": "rlogin/rsh/rexec는 인증이 취약하고 평문 전송이라 스니핑·신뢰관계 악용에 노출된다.",
+    "criteria": "양호: r 계열(512/513/514) 비활성화, SSH 대체. 취약: r 계열 서비스 구동.",
+    "target": "SOLARIS, LINUX, AIX, HP-UX",
+    "reference": "/etc/inetd.conf, /etc/xinetd.d/(rsh,rlogin,rexec)"
   },
   {
     "id": "KISA-U-37",
@@ -295,7 +473,12 @@
     "category": "3. 서비스 관리",
     "title": "cron 파일 소유자 및 권한 설정",
     "severity": "medium",
-    "rationale": "crontab/at 설정과 접근제어 파일(cron.allow/cron.deny)이 과도한 권한이면 일반 사용자가 예약 작업으로 권한 상승을 시도할 수 있다. 소유자 root·권한 640 이하로 설정하고 cron.allow로 사용을 통제한다."
+    "rationale": "crontab/at 설정과 접근제어 파일(cron.allow/cron.deny)이 과도한 권한이면 일반 사용자가 예약 작업으로 권한 상승을 시도할 수 있다. 소유자 root·권한 640 이하로 설정하고 cron.allow로 사용을 통제한다.",
+    "purpose": "cron 관련 파일의 소유자·권한과 사용 통제를 점검한다.",
+    "threat": "과도한 권한이면 일반 사용자가 예약 작업으로 권한 상승을 시도할 수 있다.",
+    "criteria": "양호: 소유자 root·권한 640 이하, cron.allow로 통제. 취약: 느슨한 권한/통제 없음.",
+    "target": "SOLARIS, LINUX, AIX, HP-UX",
+    "reference": "/etc/cron.allow, /etc/cron.deny, crontab"
   },
   {
     "id": "KISA-U-38",
@@ -303,7 +486,12 @@
     "category": "3. 서비스 관리",
     "title": "DoS 공격에 취약한 서비스 비활성화",
     "severity": "medium",
-    "rationale": "echo, discard, daytime, chargen 등 simple TCP/UDP 서비스는 서비스 거부(DoS) 증폭 공격에 악용된다. inetd/xinetd(또는 inetadm)에서 해당 서비스를 비활성화한다."
+    "rationale": "echo, discard, daytime, chargen 등 simple TCP/UDP 서비스는 서비스 거부(DoS) 증폭 공격에 악용된다. inetd/xinetd(또는 inetadm)에서 해당 서비스를 비활성화한다.",
+    "purpose": "DoS에 취약한 simple 서비스를 비활성화한다.",
+    "threat": "echo/discard/daytime/chargen은 DoS 증폭 공격에 악용된다.",
+    "criteria": "양호: 해당 서비스 비활성화. 취약: simple 서비스 구동.",
+    "target": "SOLARIS, LINUX, AIX, HP-UX",
+    "reference": "/etc/inetd.conf, inetadm(echo,discard,daytime,chargen)"
   },
   {
     "id": "KISA-U-39",
@@ -311,7 +499,12 @@
     "category": "3. 서비스 관리",
     "title": "NFS 서비스 비활성화",
     "severity": "medium",
-    "rationale": "불필요한 NFS 서비스(nfsd, statd, lockd)는 원격 파일 접근·권한 우회의 통로가 된다. 사용하지 않으면 데몬을 중지하고(systemctl/inetadm) 서비스를 비활성화한다."
+    "rationale": "불필요한 NFS 서비스(nfsd, statd, lockd)는 원격 파일 접근·권한 우회의 통로가 된다. 사용하지 않으면 데몬을 중지하고(systemctl/inetadm) 서비스를 비활성화한다.",
+    "purpose": "불필요한 NFS 서비스를 비활성화한다.",
+    "threat": "불필요한 NFS(nfsd,statd,lockd)는 원격 파일 접근·권한 우회 통로가 된다.",
+    "criteria": "양호: 미사용 시 NFS 데몬 중지. 취약: 불필요한 NFS 서비스 구동.",
+    "target": "SOLARIS, LINUX, AIX, HP-UX",
+    "reference": "nfsd/statd/lockd, systemctl/inetadm"
   },
   {
     "id": "KISA-U-40",
@@ -319,7 +512,12 @@
     "category": "3. 서비스 관리",
     "title": "NFS 접근통제",
     "severity": "medium",
-    "rationale": "NFS 공유를 everyone/'*'으로 export하면 누구나 마운트해 파일에 접근할 수 있다. /etc/dfs/dfstab·/etc/exports에서 허용 호스트를 명시하고 everyone 공유와 root 권한 export를 금지한다."
+    "rationale": "NFS 공유를 everyone/'*'으로 export하면 누구나 마운트해 파일에 접근할 수 있다. /etc/dfs/dfstab·/etc/exports에서 허용 호스트를 명시하고 everyone 공유와 root 권한 export를 금지한다.",
+    "purpose": "NFS 공유의 접근통제를 적용한다.",
+    "threat": "everyone 공유는 누구나 마운트해 파일에 접근하게 한다.",
+    "criteria": "양호: 허용 호스트 명시, everyone/root export 금지. 취약: 무제한 공유.",
+    "target": "SOLARIS, LINUX, AIX, HP-UX",
+    "reference": "/etc/dfs/dfstab, /etc/exports"
   },
   {
     "id": "KISA-U-41",
@@ -327,7 +525,12 @@
     "category": "3. 서비스 관리",
     "title": "automountd 제거",
     "severity": "medium",
-    "rationale": "automountd(autofs)는 RPC 기반 취약점으로 로컬/원격 권한 상승에 악용된 이력이 있다. 자동 마운트가 불필요하면 automountd/autofs 서비스를 비활성화한다."
+    "rationale": "automountd(autofs)는 RPC 기반 취약점으로 로컬/원격 권한 상승에 악용된 이력이 있다. 자동 마운트가 불필요하면 automountd/autofs 서비스를 비활성화한다.",
+    "purpose": "automountd(autofs)를 점검·제거한다.",
+    "threat": "automountd는 RPC 취약점으로 권한 상승에 악용된 이력이 있다.",
+    "criteria": "양호: 불필요 시 automountd 비활성화. 취약: 불필요한 automountd 구동.",
+    "target": "SOLARIS, LINUX, AIX, HP-UX",
+    "reference": "automountd/autofs, svcs/systemctl"
   },
   {
     "id": "KISA-U-42",
@@ -335,7 +538,12 @@
     "category": "3. 서비스 관리",
     "title": "불필요한 RPC 서비스 비활성화",
     "severity": "high",
-    "rationale": "rpc.cmsd, rpc.ttdbserverd, sadmind, rusersd, rstatd, rpc.nisd 등 RPC 서비스는 버퍼 오버플로우·원격 코드 실행 취약점이 다수 보고됐다. inetd/xinetd에서 불필요한 RPC 서비스를 비활성화한다."
+    "rationale": "rpc.cmsd, rpc.ttdbserverd, sadmind, rusersd, rstatd, rpc.nisd 등 RPC 서비스는 버퍼 오버플로우·원격 코드 실행 취약점이 다수 보고됐다. inetd/xinetd에서 불필요한 RPC 서비스를 비활성화한다.",
+    "purpose": "불필요한 RPC 서비스를 비활성화한다.",
+    "threat": "rpc.cmsd, rpc.ttdbserverd, sadmind 등은 원격 코드 실행 취약점이 다수 보고됐다.",
+    "criteria": "양호: 불필요한 RPC 서비스 비활성화. 취약: 취약 RPC 서비스 구동.",
+    "target": "SOLARIS, LINUX, AIX, HP-UX",
+    "reference": "/etc/inetd.conf, xinetd(RPC)"
   },
   {
     "id": "KISA-U-43",
@@ -343,7 +551,12 @@
     "category": "3. 서비스 관리",
     "title": "NIS, NIS+ 점검",
     "severity": "medium",
-    "rationale": "NIS는 인증·전송이 취약해 계정 정보 유출과 스푸핑에 노출된다. ypserv/ypbind 등 NIS 서비스가 불필요하면 비활성화하고, 필요한 경우 보안이 강화된 NIS+로 대체한다."
+    "rationale": "NIS는 인증·전송이 취약해 계정 정보 유출과 스푸핑에 노출된다. ypserv/ypbind 등 NIS 서비스가 불필요하면 비활성화하고, 필요한 경우 보안이 강화된 NIS+로 대체한다.",
+    "purpose": "NIS/NIS+ 사용을 점검한다.",
+    "threat": "NIS는 인증·전송이 취약해 계정 정보 유출·스푸핑에 노출된다.",
+    "criteria": "양호: 불필요 시 NIS 비활성화, 필요 시 NIS+ 사용. 취약: 취약한 NIS 서비스 구동.",
+    "target": "SOLARIS, LINUX, AIX, HP-UX",
+    "reference": "ypserv/ypbind/ypxfrd, svcs/systemctl"
   },
   {
     "id": "KISA-U-44",
@@ -351,7 +564,12 @@
     "category": "3. 서비스 관리",
     "title": "tftp, talk 서비스 비활성화",
     "severity": "high",
-    "rationale": "tftp는 인증 없이 파일 전송이 가능하고 talk/ntalk는 불필요한 노출을 유발한다. inetd/xinetd에서 tftp·talk·ntalk 서비스를 비활성화한다."
+    "rationale": "tftp는 인증 없이 파일 전송이 가능하고 talk/ntalk는 불필요한 노출을 유발한다. inetd/xinetd에서 tftp·talk·ntalk 서비스를 비활성화한다.",
+    "purpose": "tftp/talk 서비스를 비활성화한다.",
+    "threat": "tftp는 인증 없이 파일 전송이 가능하고 talk/ntalk는 불필요한 노출을 유발한다.",
+    "criteria": "양호: tftp·talk·ntalk 비활성화. 취약: 해당 서비스 구동.",
+    "target": "SOLARIS, LINUX, AIX, HP-UX",
+    "reference": "/etc/inetd.conf, xinetd(tftp,talk,ntalk)"
   },
   {
     "id": "KISA-U-45",
@@ -359,7 +577,12 @@
     "category": "3. 서비스 관리",
     "title": "Sendmail 버전 점검",
     "severity": "high",
-    "rationale": "오래된 Sendmail은 버퍼 오버플로우 등 원격 코드 실행 취약점이 알려져 있다. 메일 서버를 사용한다면 최신 버전으로 유지하고, 불필요하면 sendmail/postfix 서비스를 중지한다."
+    "rationale": "오래된 Sendmail은 버퍼 오버플로우 등 원격 코드 실행 취약점이 알려져 있다. 메일 서버를 사용한다면 최신 버전으로 유지하고, 불필요하면 sendmail/postfix 서비스를 중지한다.",
+    "purpose": "Sendmail 버전을 점검한다.",
+    "threat": "구버전 Sendmail은 원격 코드 실행 취약점이 알려져 있다.",
+    "criteria": "양호: 최신 버전 유지 또는 미사용 시 중지. 취약: 취약한 구버전 구동.",
+    "target": "SOLARIS, LINUX, AIX, HP-UX",
+    "reference": "/usr/sbin/sendmail -d0.1, Postfix mail_version"
   },
   {
     "id": "KISA-U-46",
@@ -367,7 +590,12 @@
     "category": "3. 서비스 관리",
     "title": "스팸 메일 릴레이 제한",
     "severity": "medium",
-    "rationale": "릴레이 제한이 없는 SMTP 서버는 스팸 발송의 경유지로 악용된다. Sendmail(sendmail.cf의 PrivacyOptions, promiscuous_relay 제거)·Postfix 설정으로 외부 릴레이를 차단한다."
+    "rationale": "릴레이 제한이 없는 SMTP 서버는 스팸 발송의 경유지로 악용된다. Sendmail(sendmail.cf의 PrivacyOptions, promiscuous_relay 제거)·Postfix 설정으로 외부 릴레이를 차단한다.",
+    "purpose": "SMTP 스팸 릴레이를 제한한다.",
+    "threat": "릴레이 제한이 없으면 스팸 발송 경유지로 악용된다.",
+    "criteria": "양호: 외부 릴레이 차단 설정. 취약: promiscuous relay 허용.",
+    "target": "SOLARIS, LINUX, AIX, HP-UX",
+    "reference": "/etc/mail/sendmail.cf(PrivacyOptions), Postfix"
   },
   {
     "id": "KISA-U-47",
@@ -375,7 +603,12 @@
     "category": "3. 서비스 관리",
     "title": "일반 사용자의 Sendmail 실행 방지",
     "severity": "medium",
-    "rationale": "일반 사용자가 Sendmail의 큐 실행(mailq -q) 등 관리 기능을 사용할 수 있으면 정보 노출·DoS에 악용된다. sendmail.cf의 PrivacyOptions에 restrictqrun을 설정해 제한한다."
+    "rationale": "일반 사용자가 Sendmail의 큐 실행(mailq -q) 등 관리 기능을 사용할 수 있으면 정보 노출·DoS에 악용된다. sendmail.cf의 PrivacyOptions에 restrictqrun을 설정해 제한한다.",
+    "purpose": "일반 사용자의 Sendmail 큐 실행을 제한한다.",
+    "threat": "일반 사용자가 큐 관리 기능을 쓰면 정보 노출·DoS에 악용된다.",
+    "criteria": "양호: restrictqrun 설정. 취약: 일반 사용자 큐 실행 허용.",
+    "target": "SOLARIS, LINUX, AIX, HP-UX",
+    "reference": "/etc/mail/sendmail.cf(PrivacyOptions restrictqrun)"
   },
   {
     "id": "KISA-U-48",
@@ -383,7 +616,12 @@
     "category": "3. 서비스 관리",
     "title": "expn, vrfy 명령어 제한",
     "severity": "medium",
-    "rationale": "SMTP의 EXPN/VRFY 명령은 계정·메일링리스트 존재 여부를 노출해 계정 수집에 악용된다. sendmail.cf의 PrivacyOptions에 noexpn, novrfy(goaway)를 설정한다."
+    "rationale": "SMTP의 EXPN/VRFY 명령은 계정·메일링리스트 존재 여부를 노출해 계정 수집에 악용된다. sendmail.cf의 PrivacyOptions에 noexpn, novrfy(goaway)를 설정한다.",
+    "purpose": "SMTP EXPN/VRFY 명령을 제한한다.",
+    "threat": "EXPN/VRFY는 계정·메일링리스트 존재를 노출해 계정 수집에 악용된다.",
+    "criteria": "양호: noexpn,novrfy(goaway) 설정. 취약: EXPN/VRFY 응답 허용.",
+    "target": "SOLARIS, LINUX, AIX, HP-UX",
+    "reference": "/etc/mail/sendmail.cf(PrivacyOptions)"
   },
   {
     "id": "KISA-U-49",
@@ -391,7 +629,12 @@
     "category": "3. 서비스 관리",
     "title": "DNS 보안 버전 패치",
     "severity": "high",
-    "rationale": "구버전 BIND는 버퍼 오버플로우·DoS 등 심각한 취약점이 다수 알려져 있다. DNS 서버를 운영한다면 BIND를 보안 패치된 최신 버전으로 유지하고 불필요하면 서비스를 중지한다."
+    "rationale": "구버전 BIND는 버퍼 오버플로우·DoS 등 심각한 취약점이 다수 알려져 있다. DNS 서버를 운영한다면 BIND를 보안 패치된 최신 버전으로 유지하고 불필요하면 서비스를 중지한다.",
+    "purpose": "DNS(BIND) 보안 버전을 유지한다.",
+    "threat": "구버전 BIND는 버퍼 오버플로우·DoS 등 심각한 취약점이 다수 알려져 있다.",
+    "criteria": "양호: 보안 패치된 최신 BIND 또는 미사용 시 중지. 취약: 취약 버전 구동.",
+    "target": "SOLARIS, LINUX, AIX, HP-UX",
+    "reference": "named -v, BIND 패치"
   },
   {
     "id": "KISA-U-50",
@@ -399,7 +642,12 @@
     "category": "3. 서비스 관리",
     "title": "DNS Zone Transfer 설정",
     "severity": "medium",
-    "rationale": "Zone Transfer를 제한하지 않으면 전체 도메인 정보가 외부에 유출되어 공격 정보 수집에 쓰인다. named.conf의 allow-transfer로 허가된 Secondary 네임서버로만 전송을 제한한다."
+    "rationale": "Zone Transfer를 제한하지 않으면 전체 도메인 정보가 외부에 유출되어 공격 정보 수집에 쓰인다. named.conf의 allow-transfer로 허가된 Secondary 네임서버로만 전송을 제한한다.",
+    "purpose": "DNS Zone Transfer를 제한한다.",
+    "threat": "제한이 없으면 전체 도메인 정보가 유출되어 공격 정보 수집에 쓰인다.",
+    "criteria": "양호: allow-transfer로 허가 Secondary로만 제한. 취약: 무제한 Zone Transfer.",
+    "target": "SOLARIS, LINUX, AIX, HP-UX",
+    "reference": "/etc/named.conf(allow-transfer)"
   },
   {
     "id": "KISA-U-51",
@@ -407,7 +655,12 @@
     "category": "3. 서비스 관리",
     "title": "DNS Zone Update(allow-update) 제한",
     "severity": "medium",
-    "rationale": "동적 업데이트(allow-update)를 제한하지 않으면 비인가자가 레코드를 변조할 수 있다. named.conf의 allow-update를 none 또는 허가된 키/주소로 제한한다."
+    "rationale": "동적 업데이트(allow-update)를 제한하지 않으면 비인가자가 레코드를 변조할 수 있다. named.conf의 allow-update를 none 또는 허가된 키/주소로 제한한다.",
+    "purpose": "DNS 동적 업데이트(allow-update)를 제한한다.",
+    "threat": "제한이 없으면 비인가자가 DNS 레코드를 변조할 수 있다.",
+    "criteria": "양호: allow-update none 또는 허가 키/주소. 취약: 무제한 동적 업데이트.",
+    "target": "SOLARIS, LINUX, AIX, HP-UX",
+    "reference": "/etc/named.conf(allow-update)"
   },
   {
     "id": "KISA-U-52",
@@ -415,7 +668,12 @@
     "category": "3. 서비스 관리",
     "title": "Telnet 서비스 비활성화",
     "severity": "medium",
-    "rationale": "Telnet은 계정·패스워드를 평문 전송해 스니핑에 노출된다. inetd/xinetd 또는 svc(network/telnet)에서 telnet을 비활성화하고 SSH로 대체한다."
+    "rationale": "Telnet은 계정·패스워드를 평문 전송해 스니핑에 노출된다. inetd/xinetd 또는 svc(network/telnet)에서 telnet을 비활성화하고 SSH로 대체한다.",
+    "purpose": "불필요한 Telnet 서비스를 비활성화한다.",
+    "threat": "Telnet은 계정·패스워드를 평문 전송해 스니핑에 노출된다.",
+    "criteria": "양호: telnet 비활성화, SSH 대체. 취약: telnet 서비스 구동.",
+    "target": "SOLARIS, LINUX, AIX, HP-UX",
+    "reference": "/etc/inetd.conf, svc:/network/telnet"
   },
   {
     "id": "KISA-U-53",
@@ -423,7 +681,12 @@
     "category": "3. 서비스 관리",
     "title": "FTP 서비스 접속 경고 메시지(배너) 설정",
     "severity": "medium",
-    "rationale": "접속 배너에 서버 종류·버전이 노출되면 공격 정보 수집에 악용된다. vsftpd(ftpd_banner)·ProFTPD(ServerIdent) 설정으로 버전 노출을 줄이고 경고 메시지를 설정한다."
+    "rationale": "접속 배너에 서버 종류·버전이 노출되면 공격 정보 수집에 악용된다. vsftpd(ftpd_banner)·ProFTPD(ServerIdent) 설정으로 버전 노출을 줄이고 경고 메시지를 설정한다.",
+    "purpose": "FTP 접속 배너에서 버전 노출을 줄이고 경고 메시지를 설정한다.",
+    "threat": "배너에 종류·버전이 노출되면 공격 정보 수집에 악용된다.",
+    "criteria": "양호: 배너에 버전 미노출, 경고 메시지 설정. 취약: 버전 노출.",
+    "target": "SOLARIS, LINUX, AIX, HP-UX",
+    "reference": "/etc/vsftpd/vsftpd.conf(ftpd_banner), proftpd(ServerIdent)"
   },
   {
     "id": "KISA-U-54",
@@ -431,7 +694,12 @@
     "category": "3. 서비스 관리",
     "title": "FTP 서비스 비활성화",
     "severity": "high",
-    "rationale": "평문 FTP는 계정·데이터 노출 위험이 크다. FTP가 불필요하면 vsftpd/ProFTPD 서비스를 중지하고, 필요한 경우 SFTP(SSH)·FTPS로 대체한다."
+    "rationale": "평문 FTP는 계정·데이터 노출 위험이 크다. FTP가 불필요하면 vsftpd/ProFTPD 서비스를 중지하고, 필요한 경우 SFTP(SSH)·FTPS로 대체한다.",
+    "purpose": "불필요한 FTP 서비스를 비활성화한다.",
+    "threat": "평문 FTP는 계정·데이터 노출 위험이 크다.",
+    "criteria": "양호: 미사용 시 FTP 중지, 필요 시 SFTP/FTPS. 취약: 평문 FTP 구동.",
+    "target": "SOLARIS, LINUX, AIX, HP-UX",
+    "reference": "vsftpd/proftpd, svcs/systemctl"
   },
   {
     "id": "KISA-U-55",
@@ -439,7 +707,12 @@
     "category": "3. 서비스 관리",
     "title": "FTP 계정 shell 제한",
     "severity": "medium",
-    "rationale": "FTP 전용 계정에 로그인 쉘이 부여되면 셸 접근으로 악용될 수 있다. /etc/passwd에서 ftp 계정의 쉘을 /bin/false 또는 /sbin/nologin으로 지정한다."
+    "rationale": "FTP 전용 계정에 로그인 쉘이 부여되면 셸 접근으로 악용될 수 있다. /etc/passwd에서 ftp 계정의 쉘을 /bin/false 또는 /sbin/nologin으로 지정한다.",
+    "purpose": "FTP 전용 계정의 쉘을 제한한다.",
+    "threat": "FTP 계정에 로그인 쉘이 있으면 쉘 접근으로 악용된다.",
+    "criteria": "양호: ftp 계정 쉘이 nologin/false. 취약: 로그인 가능 쉘 부여.",
+    "target": "SOLARIS, LINUX, AIX, HP-UX",
+    "reference": "/etc/passwd(ftp), /sbin/nologin"
   },
   {
     "id": "KISA-U-56",
@@ -447,7 +720,12 @@
     "category": "3. 서비스 관리",
     "title": "Ftpusers 파일을 통한 root 접속 제한",
     "severity": "medium",
-    "rationale": "ftpusers에 root가 등록되어 있지 않으면 root 계정으로 직접 FTP 접속이 가능해 탈취 시 치명적이다. /etc/ftpusers(또는 vsftpd user_list)에 root 등 민감 계정을 등록해 FTP 접속을 차단한다."
+    "rationale": "ftpusers에 root가 등록되어 있지 않으면 root 계정으로 직접 FTP 접속이 가능해 탈취 시 치명적이다. /etc/ftpusers(또는 vsftpd user_list)에 root 등 민감 계정을 등록해 FTP 접속을 차단한다.",
+    "purpose": "ftpusers로 root 등 민감 계정의 FTP 접속을 차단한다.",
+    "threat": "ftpusers에 root가 없으면 root로 직접 FTP 접속이 가능해 탈취 시 치명적이다.",
+    "criteria": "양호: ftpusers에 root 등 등록(접속 차단). 취약: root가 FTP 접속 가능.",
+    "target": "SOLARIS, LINUX, AIX, HP-UX",
+    "reference": "/etc/ftpusers, vsftpd user_list"
   },
   {
     "id": "KISA-U-57",
@@ -455,7 +733,12 @@
     "category": "3. 서비스 관리",
     "title": "Ftpusers 파일 소유자 및 권한 설정",
     "severity": "medium",
-    "rationale": "ftpusers 접근제어 파일이 변조되면 FTP 접속 제한이 무력화된다. 소유자를 root로, 권한을 640 이하로 설정해 임의 수정을 방지한다."
+    "rationale": "ftpusers 접근제어 파일이 변조되면 FTP 접속 제한이 무력화된다. 소유자를 root로, 권한을 640 이하로 설정해 임의 수정을 방지한다.",
+    "purpose": "ftpusers 파일의 소유자·권한을 보호한다.",
+    "threat": "ftpusers가 변조되면 FTP 접속 제한이 무력화된다.",
+    "criteria": "양호: 소유자 root, 권한 640 이하. 취약: 변조 가능 권한.",
+    "target": "SOLARIS, LINUX, AIX, HP-UX",
+    "reference": "/etc/ftpusers"
   },
   {
     "id": "KISA-U-58",
@@ -463,7 +746,12 @@
     "category": "3. 서비스 관리",
     "title": "불필요한 SNMP 서비스 구동 점검",
     "severity": "high",
-    "rationale": "불필요한 SNMP 서비스는 시스템 정보 노출과 설정 변조(쓰기 커뮤니티)로 이어진다. 사용하지 않으면 snmpd/snmpdx 서비스를 중지한다."
+    "rationale": "불필요한 SNMP 서비스는 시스템 정보 노출과 설정 변조(쓰기 커뮤니티)로 이어진다. 사용하지 않으면 snmpd/snmpdx 서비스를 중지한다.",
+    "purpose": "불필요한 SNMP 서비스 구동을 점검한다.",
+    "threat": "불필요한 SNMP는 시스템 정보 노출·설정 변조로 이어진다.",
+    "criteria": "양호: 미사용 시 snmpd 중지. 취약: 불필요한 SNMP 구동.",
+    "target": "SOLARIS, LINUX, AIX, HP-UX",
+    "reference": "snmpd/snmpdx, svcs/systemctl"
   },
   {
     "id": "KISA-U-59",
@@ -471,7 +759,12 @@
     "category": "3. 서비스 관리",
     "title": "SNMP 서비스 보안 설정",
     "severity": "medium",
-    "rationale": "SNMP v1/v2c는 평문 커뮤니티 기반이라 스니핑에 취약하다. 인증·암호화(HMAC-SHA, AES)를 지원하는 SNMP v3(authPriv)로 구성한다."
+    "rationale": "SNMP v1/v2c는 평문 커뮤니티 기반이라 스니핑에 취약하다. 인증·암호화(HMAC-SHA, AES)를 지원하는 SNMP v3(authPriv)로 구성한다.",
+    "purpose": "SNMP 서비스를 안전하게 설정한다.",
+    "threat": "SNMP v1/v2c는 평문 커뮤니티라 스니핑에 취약하다.",
+    "criteria": "양호: 인증·암호화 지원 v3(authPriv) 사용. 취약: v1/v2c 사용.",
+    "target": "SOLARIS, LINUX, AIX, HP-UX",
+    "reference": "snmpd.conf(v3, HMAC-SHA/AES)"
   },
   {
     "id": "KISA-U-60",
@@ -479,7 +772,12 @@
     "category": "3. 서비스 관리",
     "title": "SNMP Community String 복잡성 설정",
     "severity": "medium",
-    "rationale": "기본 커뮤니티 스트링(public/private)을 그대로 두면 누구나 정보를 조회·변경할 수 있다. 추측하기 어려운 값으로 변경하고 기본값 사용을 금지한다."
+    "rationale": "기본 커뮤니티 스트링(public/private)을 그대로 두면 누구나 정보를 조회·변경할 수 있다. 추측하기 어려운 값으로 변경하고 기본값 사용을 금지한다.",
+    "purpose": "SNMP Community String을 추측 어렵게 설정한다.",
+    "threat": "기본값(public/private)은 누구나 정보를 조회·변경하게 한다.",
+    "criteria": "양호: 기본값 미사용, 복잡한 값. 취약: public/private 등 기본값 사용.",
+    "target": "SOLARIS, LINUX, AIX, HP-UX",
+    "reference": "snmpd.conf(community)"
   },
   {
     "id": "KISA-U-61",
@@ -487,7 +785,12 @@
     "category": "3. 서비스 관리",
     "title": "SNMP Access Control 설정",
     "severity": "medium",
-    "rationale": "SNMP 접근 출발지를 제한하지 않으면 비인가 NMS가 정보를 조회·변조할 수 있다. snmpd.conf의 com2sec/rocommunity/rwcommunity로 허용 IP와 읽기/쓰기 범위를 제한한다."
+    "rationale": "SNMP 접근 출발지를 제한하지 않으면 비인가 NMS가 정보를 조회·변조할 수 있다. snmpd.conf의 com2sec/rocommunity/rwcommunity로 허용 IP와 읽기/쓰기 범위를 제한한다.",
+    "purpose": "SNMP 접근통제를 적용한다.",
+    "threat": "접근 출발지 제한이 없으면 비인가 NMS가 정보를 조회·변조할 수 있다.",
+    "criteria": "양호: com2sec/rocommunity로 허용 IP·권한 제한. 취약: 무제한 접근.",
+    "target": "SOLARIS, LINUX, AIX, HP-UX",
+    "reference": "/etc/snmp/snmpd.conf(com2sec, rocommunity)"
   },
   {
     "id": "KISA-U-62",
@@ -495,7 +798,12 @@
     "category": "3. 서비스 관리",
     "title": "로그온 시 경고 메시지(배너) 제공",
     "severity": "medium",
-    "rationale": "접속 시 비인가 사용에 대한 경고 배너가 없으면 법적 대응 근거가 약하고 서버 정보가 노출될 수 있다. /etc/motd·/etc/issue(.net)·sshd_config(Banner)·telnetd 배너로 경고 메시지를 설정한다."
+    "rationale": "접속 시 비인가 사용에 대한 경고 배너가 없으면 법적 대응 근거가 약하고 서버 정보가 노출될 수 있다. /etc/motd·/etc/issue(.net)·sshd_config(Banner)·telnetd 배너로 경고 메시지를 설정한다.",
+    "purpose": "로그온 시 경고 배너를 제공한다.",
+    "threat": "경고 배너가 없으면 법적 대응 근거가 약하고 서버 정보가 노출될 수 있다.",
+    "criteria": "양호: 접속 서비스에 경고 메시지 설정. 취약: 배너 미설정/버전 노출.",
+    "target": "SOLARIS, LINUX, AIX, HP-UX",
+    "reference": "/etc/motd, /etc/issue(.net), sshd_config(Banner)"
   },
   {
     "id": "KISA-U-63",
@@ -503,25 +811,38 @@
     "category": "3. 서비스 관리",
     "title": "사용자별 sudo 명령 권한 설정",
     "severity": "high",
-    "rationale": "sudo 권한을 과도하게(ALL) 부여하면 사실상 root 권한을 위임하는 것과 같다. /etc/sudoers를 점검해 사용자/그룹별로 꼭 필요한 명령만 최소 권한으로 허용한다."
+    "rationale": "sudo 권한을 과도하게(ALL) 부여하면 사실상 root 권한을 위임하는 것과 같다. /etc/sudoers를 점검해 사용자/그룹별로 꼭 필요한 명령만 최소 권한으로 허용한다.",
+    "purpose": "사용자별 sudo 권한을 최소 권한으로 설정한다.",
+    "threat": "sudo를 과도하게(ALL) 부여하면 사실상 root 권한을 위임하는 것과 같다.",
+    "criteria": "양호: 사용자/그룹별 필요한 명령만 허용. 취약: 광범위한 sudo(ALL) 허용.",
+    "target": "SOLARIS, LINUX, AIX, HP-UX",
+    "reference": "/etc/sudoers, visudo"
   },
-
   {
     "id": "KISA-U-64",
     "standard": "KISA",
     "category": "4. 패치 관리",
     "title": "최신 보안 패치 및 벤더 권고사항 적용",
     "severity": "high",
-    "rationale": "커널·O/S·주요 서비스의 보안 패치가 누락되면 알려진 취약점(CVE)을 통한 침해에 노출된다. 벤더 권고사항에 따라 정기적으로 패치를 적용하고 적용 이력을 관리한다."
+    "rationale": "커널·O/S·주요 서비스의 보안 패치가 누락되면 알려진 취약점(CVE)을 통한 침해에 노출된다. 벤더 권고사항에 따라 정기적으로 패치를 적용하고 적용 이력을 관리한다.",
+    "purpose": "커널·O/S·주요 서비스에 최신 보안 패치를 적용한다.",
+    "threat": "패치 누락 시 알려진 취약점(CVE)을 통한 침해에 노출된다.",
+    "criteria": "양호: 벤더 권고에 따라 정기 패치 적용. 취약: 보안 패치 미적용.",
+    "target": "SOLARIS, LINUX, AIX, HP-UX",
+    "reference": "벤더 보안 권고, 패치 관리 절차"
   },
-
   {
     "id": "KISA-U-65",
     "standard": "KISA",
     "category": "5. 로그 관리",
     "title": "로그 기록의 정확성을 위한 시각 동기화(NTP) 설정",
     "severity": "medium",
-    "rationale": "시스템 시각이 어긋나면 로그 타임스탬프의 신뢰성이 떨어져 침해 사고 분석과 상관분석이 어려워진다. NTP(ntp.conf, ntpq)로 신뢰된 시각 서버와 동기화한다."
+    "rationale": "시스템 시각이 어긋나면 로그 타임스탬프의 신뢰성이 떨어져 침해 사고 분석과 상관분석이 어려워진다. NTP(ntp.conf, ntpq)로 신뢰된 시각 서버와 동기화한다.",
+    "purpose": "로그 시각 정확성을 위해 시각 동기화(NTP)를 설정한다.",
+    "threat": "시각이 어긋나면 로그 타임스탬프 신뢰성이 떨어져 사고 분석·상관분석이 어렵다.",
+    "criteria": "양호: 신뢰된 NTP 서버와 동기화. 취약: 시각 동기화 미설정.",
+    "target": "SOLARIS, LINUX, AIX, HP-UX",
+    "reference": "/etc/ntp.conf, ntpq"
   },
   {
     "id": "KISA-U-66",
@@ -529,7 +850,12 @@
     "category": "5. 로그 관리",
     "title": "정책에 따른 시스템 로깅 설정",
     "severity": "medium",
-    "rationale": "로그 수준·대상이 정책에 맞게 설정되지 않으면 보안 이벤트(인증 실패, 권한 변경 등)가 기록되지 않아 사고 추적이 불가능하다. syslog/rsyslog(.conf)에서 info·alert·emerg 등 필요한 수준의 로그가 기록되도록 설정한다."
+    "rationale": "로그 수준·대상이 정책에 맞게 설정되지 않으면 보안 이벤트(인증 실패, 권한 변경 등)가 기록되지 않아 사고 추적이 불가능하다. syslog/rsyslog(.conf)에서 info·alert·emerg 등 필요한 수준의 로그가 기록되도록 설정한다.",
+    "purpose": "정책에 따라 시스템 로깅을 설정한다.",
+    "threat": "필요한 로그가 기록되지 않으면 인증 실패·권한 변경 등 보안 이벤트 추적이 불가능하다.",
+    "criteria": "양호: 정책 수준(info/alert/emerg 등)으로 로깅 설정. 취약: 로깅 미설정/부족.",
+    "target": "SOLARIS, LINUX, AIX, HP-UX",
+    "reference": "/etc/syslog.conf, /etc/rsyslog.conf"
   },
   {
     "id": "KISA-U-67",
@@ -537,6 +863,11 @@
     "category": "5. 로그 관리",
     "title": "로그 파일 소유자 및 권한 설정",
     "severity": "medium",
-    "rationale": "로그 파일이 과도한 권한이면 침해 흔적이 삭제·위조될 수 있다. /var/log(또는 /var/adm, /var/adm/syslog) 하위 로그 파일의 소유자를 root로, 권한을 644 이하로 설정한다."
+    "rationale": "로그 파일이 과도한 권한이면 침해 흔적이 삭제·위조될 수 있다. /var/log(또는 /var/adm, /var/adm/syslog) 하위 로그 파일의 소유자를 root로, 권한을 644 이하로 설정한다.",
+    "purpose": "로그 파일의 소유자·권한을 보호한다.",
+    "threat": "로그 파일 권한이 과도하면 침해 흔적이 삭제·위조될 수 있다.",
+    "criteria": "양호: 소유자 root, 권한 644 이하. 취약: 변조 가능 권한.",
+    "target": "SOLARIS, LINUX, AIX, HP-UX",
+    "reference": "/var/log, /var/adm, /var/adm/syslog"
   }
 ]

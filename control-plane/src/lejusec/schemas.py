@@ -98,6 +98,17 @@ class CheckItemOut(BaseModel):
     severity: str
     rationale: str
     category: str = ""
+    # 상세 표시용(점검 기준 항목 클릭 시 전체 내용). 수동 항목은 tool/fix가 비어 있다.
+    tool: str = ""
+    rule_type: str = ""
+    fix: str = ""
+    rollback: str = ""
+    # KISA 상세가이드 본문(항목 상세)
+    purpose: str = ""
+    threat: str = ""
+    criteria: str = ""
+    target: str = ""
+    reference: str = ""
 
 
 class CheckSearchHit(BaseModel):

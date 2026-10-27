@@ -17,6 +17,15 @@ def _to_out(item: CheckItem) -> CheckItemOut:
         severity=item.severity.value,
         rationale=item.rationale,
         category=item.category,
+        tool=item.tool,
+        rule_type=item.rule_type,
+        fix=item.fix,
+        rollback=item.rollback,
+        purpose=item.purpose,
+        threat=item.threat,
+        criteria=item.criteria,
+        target=item.target,
+        reference=item.reference,
     )
 
 

@@ -492,6 +492,131 @@ button:disabled {
   color: var(--muted);
 }
 
+/* ---- Panel box (generic bordered surface) ---- */
+.panel-box {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-1);
+  padding: var(--s-5);
+}
+
+/* ---- Dashboard: agent connection donut + legend ---- */
+.agent-breakdown {
+  display: flex;
+  align-items: center;
+  gap: var(--s-6);
+  flex-wrap: wrap;
+}
+.donut-num {
+  font-size: 26px;
+  font-weight: 700;
+  fill: var(--text);
+}
+.donut-cap {
+  font-size: 11px;
+  fill: var(--muted);
+}
+.legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  min-width: 200px;
+}
+.legend li {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: 14px;
+}
+.legend .swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+.legend strong {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- Collapsible check groups ---- */
+.group {
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--panel);
+  box-shadow: var(--shadow-1);
+  overflow: hidden;
+}
+.group-head {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-3) var(--s-4);
+  background: var(--panel-2);
+  border: none;
+  border-radius: 0;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: left;
+}
+.group-head:hover {
+  background: var(--panel-2);
+  border-color: transparent;
+}
+.group-caret {
+  color: var(--muted);
+  width: 14px;
+}
+.group-name {
+  flex: 1;
+}
+.group-body {
+  display: flex;
+  flex-direction: column;
+}
+.check-row {
+  border-top: 1px solid var(--border);
+}
+.check-summary {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  flex-wrap: wrap;
+  padding: var(--s-3) var(--s-4);
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  text-align: left;
+  font-weight: 400;
+}
+.check-summary:hover {
+  background: var(--panel-2);
+  border-color: transparent;
+}
+.check-summary strong {
+  font-weight: 600;
+}
+.check-caret {
+  margin-left: auto;
+  color: var(--accent);
+  font-size: 13px;
+}
+.check-row .detail {
+  margin: 0 var(--s-4) var(--s-4);
+}
+.kv.compact div {
+  padding: var(--s-2) var(--s-3);
+}
+.kv.compact .k {
+  width: 96px;
+}
+
 /* ---- Modal ---- */
 .modal-overlay {
   position: fixed;

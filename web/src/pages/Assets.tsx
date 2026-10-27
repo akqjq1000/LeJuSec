@@ -2,7 +2,13 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 
-import { api } from '../api'
+import { AGENT_STATE_LABEL, agentState, api, type AgentState } from '../api'
+
+const STATE_BADGE: Record<AgentState, string> = {
+  connected: 'pass',
+  pending: 'na',
+  unregistered: '',
+}
 
 export default function Assets() {
   const qc = useQueryClient()
@@ -31,7 +37,7 @@ export default function Assets() {
               <th>호스트</th>
               <th>OS</th>
               <th>관리</th>
-              <th>에이전트</th>
+              <th>에이전트 연결</th>
               <th>최근 점검</th>
             </tr>
           </thead>
@@ -49,7 +55,11 @@ export default function Assets() {
                   )}
                 </td>
                 <td>{a.managed ? '관리' : '-'}</td>
-                <td>{a.agent_status}</td>
+                <td>
+                  <span className={`badge ${STATE_BADGE[agentState(a)]}`}>
+                    {AGENT_STATE_LABEL[agentState(a)]}
+                  </span>
+                </td>
                 <td>{a.last_scan_at ? new Date(a.last_scan_at).toLocaleString() : '-'}</td>
               </tr>
             ))}

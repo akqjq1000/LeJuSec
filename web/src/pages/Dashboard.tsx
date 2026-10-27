@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 
-import { api } from '../api'
+import { AGENT_STATE_LABEL, agentState, api, type AgentState } from '../api'
 
 interface Card {
   label: string
@@ -9,12 +9,24 @@ interface Card {
   tone?: 'ok' | 'bad' | 'warn'
 }
 
+const STATE_COLOR: Record<AgentState, string> = {
+  connected: 'var(--ok)',
+  pending: 'var(--warn)',
+  unregistered: 'var(--border-strong)',
+}
+const STATE_ORDER: AgentState[] = ['connected', 'pending', 'unregistered']
+
 export default function Dashboard() {
   const { data, isLoading, error } = useQuery({ queryKey: ['summary'], queryFn: api.summary })
+  const assetsQ = useQuery({ queryKey: ['assets'], queryFn: api.assets })
 
   if (isLoading) return <p className="muted">불러오는 중…</p>
   if (error) return <p className="error">불러오기 실패: {(error as Error).message}</p>
   if (!data) return null
+
+  const assets = assetsQ.data ?? []
+  const counts: Record<AgentState, number> = { connected: 0, pending: 0, unregistered: 0 }
+  for (const a of assets) counts[agentState(a)] += 1
 
   const cards: Card[] = [
     { label: '자산', value: data.assets_total, hint: `관리 ${data.assets_managed}` },
@@ -46,6 +58,63 @@ export default function Dashboard() {
           </div>
         ))}
       </div>
+
+      <div className="section-title">에이전트 연결 현황</div>
+      <div className="panel-box agent-breakdown">
+        <Donut
+          segments={STATE_ORDER.map((s) => ({ value: counts[s], color: STATE_COLOR[s] }))}
+          total={assets.length}
+        />
+        <ul className="legend">
+          {STATE_ORDER.map((s) => (
+            <li key={s}>
+              <span className="swatch" style={{ background: STATE_COLOR[s] }} />
+              <span>{AGENT_STATE_LABEL[s]}</span>
+              <strong>{counts[s]}</strong>
+            </li>
+          ))}
+        </ul>
+      </div>
     </section>
+  )
+}
+
+/** 의존성 없는 인라인 SVG 도넛 차트. */
+function Donut({ segments, total }: { segments: { value: number; color: string }[]; total: number }) {
+  const r = 52
+  const c = 2 * Math.PI * r
+  let offset = 0
+  return (
+    <svg viewBox="0 0 140 140" width="140" height="140" role="img" aria-label="에이전트 연결 분포">
+      <circle cx="70" cy="70" r={r} fill="none" stroke="var(--border)" strokeWidth="16" />
+      {total > 0 &&
+        segments.map((seg, i) => {
+          if (seg.value === 0) return null
+          const len = (seg.value / total) * c
+          const dash = `${len} ${c - len}`
+          const el = (
+            <circle
+              key={i}
+              cx="70"
+              cy="70"
+              r={r}
+              fill="none"
+              stroke={seg.color}
+              strokeWidth="16"
+              strokeDasharray={dash}
+              strokeDashoffset={-offset}
+              transform="rotate(-90 70 70)"
+            />
+          )
+          offset += len
+          return el
+        })}
+      <text x="70" y="66" textAnchor="middle" className="donut-num">
+        {total}
+      </text>
+      <text x="70" y="84" textAnchor="middle" className="donut-cap">
+        자산
+      </text>
+    </svg>
   )
 }

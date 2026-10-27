@@ -37,6 +37,12 @@ class CheckItem(BaseModel):
     rationale: str
     # 점검 분류(예: "계정 관리"). 지식 항목의 분류 표시용. 자동 점검은 비워둘 수 있다.
     category: str = ""
+    # KISA 상세가이드 본문 구성(항목 상세 표시용). 자동 점검은 비워둘 수 있다.
+    purpose: str = ""  # 점검 목적
+    threat: str = ""  # 보안 위협
+    criteria: str = ""  # 판단 기준(양호/취약)
+    target: str = ""  # 점검 대상(적용 플랫폼)
+    reference: str = ""  # 참고
     # 연동 스캐너(openscap | lynis | trivy …). RAG 전용 수동 항목은 비운다.
     tool: str = ""
     rule_type: str = MANUAL_RULE_TYPE  # "config" | "vuln_absent" | "manual"

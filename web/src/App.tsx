@@ -10,6 +10,7 @@ import Assets from './pages/Assets'
 import Audit from './pages/Audit'
 import Checks from './pages/Checks'
 import Dashboard from './pages/Dashboard'
+import Scans from './pages/Scans'
 
 function AuthControl() {
   const me = useQuery({ queryKey: ['me'], queryFn: api.me, retry: false })
@@ -51,6 +52,9 @@ export default function App() {
           <NavLink to="/assets" className={navClass}>
             자산
           </NavLink>
+          <NavLink to="/scans" className={navClass}>
+            점검
+          </NavLink>
           <NavLink to="/checks" className={navClass}>
             점검 기준
           </NavLink>
@@ -65,6 +69,7 @@ export default function App() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/assets" element={<Assets />} />
           <Route path="/assets/:id" element={<AssetDetail />} />
+          <Route path="/scans" element={<Scans />} />
           <Route path="/checks" element={<Checks />} />
           <Route path="/audit" element={<Audit />} />
         </Routes>

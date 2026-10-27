@@ -148,6 +148,32 @@ export interface CheckItem {
   title: string
   severity: string
   rationale: string
+  category: string
+  tool: string
+  rule_type: string
+  fix: string
+  rollback: string
+  // KISA 상세가이드 본문(항목 상세)
+  purpose: string
+  threat: string
+  criteria: string
+  target: string
+  reference: string
+}
+
+/** 자산의 에이전트 연결 상태 (public_key/last_scan_at로 도출). */
+export type AgentState = 'connected' | 'pending' | 'unregistered'
+
+export function agentState(a: Asset): AgentState {
+  if (!a.public_key) return 'unregistered'
+  if (!a.last_scan_at) return 'pending'
+  return 'connected'
+}
+
+export const AGENT_STATE_LABEL: Record<AgentState, string> = {
+  connected: '에이전트 연결됨',
+  pending: '에이전트 등록·대기',
+  unregistered: '수동 등록(미연결)',
 }
 
 export interface CheckHit {
