@@ -2,6 +2,7 @@ import { useMutation, useQueries, useQuery, useQueryClient, type Query } from '@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 
+import ScanProgress from '../components/ScanProgress'
 import {
   AGENT_STATE_LABEL,
   HEALTH_LABEL,
@@ -156,6 +157,7 @@ function ScanRow({
   const fail = results.filter((r) => r.status === 'fail').length
   const na = results.filter((r) => r.status === 'na').length
   const pending = requests.find((c) => c.status === 'pending' || c.status === 'claimed')
+  const latest = requests[0] // 목록은 id 내림차순 → 가장 최근 요청
 
   const invalidate = () => {
     void qc.invalidateQueries({ queryKey: ['scan-requests', asset.id] })
@@ -192,6 +194,7 @@ function ScanRow({
       <td>{results.length ? <span className="badge">{na}</span> : '-'}</td>
       <td>{asset.last_scan_at ? new Date(asset.last_scan_at).toLocaleString() : '-'}</td>
       <td>
+        {latest ? <ScanProgress status={latest.status} result={latest.result} /> : null}
         <div className="row-actions">
           {asset.scan_paused ? <span className="badge na">일시정지됨</span> : null}
           <button

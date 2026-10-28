@@ -228,23 +228,25 @@ echo "▶ 첫 인벤토리 전송"
 "$RUN_SH"
 
 # ---- 7) systemd 타이머 (기본 설치) ---------------------------------------------
-# 두 개의 타이머: (a) 점검/인벤토리(주기 $POLL_INTERVAL), (b) 헬스체크 하트비트.
+# 두 개의 타이머:
+#  (a) 인벤토리 수집: 주기 $POLL_INTERVAL(기본 15분) — 패키지/프로세스 스냅샷 전송.
+#  (b) 하트비트 + 명령 poll: 주기 $HEARTBEAT_INTERVAL(기본 1분) — 생존 신호와 함께
+#      서버 큐의 검사 명령을 신속히 가져와 실행한다(온디맨드 "검사 요청" 응답성 확보).
 if [ "$INSTALL_SYSTEMD" = "1" ] && command -v systemctl >/dev/null 2>&1; then
-  echo "▶ systemd 타이머 설치 (점검 $POLL_INTERVAL · 하트비트 $HEARTBEAT_INTERVAL)"
+  echo "▶ systemd 타이머 설치 (인벤토리 $POLL_INTERVAL · 하트비트+poll $HEARTBEAT_INTERVAL)"
   cat > /etc/systemd/system/lejusec-agent.service <<EOF
 [Unit]
-Description=LeJuSec agent — inventory + command poll
+Description=LeJuSec agent — inventory
 After=network-online.target
 Wants=network-online.target
 
 [Service]
 Type=oneshot
 ExecStart=$RUN_SH
-ExecStart=$RUN_SH --poll
 EOF
   cat > /etc/systemd/system/lejusec-agent.timer <<EOF
 [Unit]
-Description=LeJuSec agent 주기 실행(점검/인벤토리)
+Description=LeJuSec agent 인벤토리 수집
 
 [Timer]
 OnBootSec=2min
@@ -256,17 +258,18 @@ WantedBy=timers.target
 EOF
   cat > /etc/systemd/system/lejusec-agent-heartbeat.service <<EOF
 [Unit]
-Description=LeJuSec agent — liveness heartbeat
+Description=LeJuSec agent — heartbeat + command poll
 After=network-online.target
 Wants=network-online.target
 
 [Service]
 Type=oneshot
 ExecStart=$RUN_SH --heartbeat
+ExecStart=$RUN_SH --poll
 EOF
   cat > /etc/systemd/system/lejusec-agent-heartbeat.timer <<EOF
 [Unit]
-Description=LeJuSec agent 하트비트(헬스체크)
+Description=LeJuSec agent 하트비트+명령 poll
 
 [Timer]
 OnBootSec=30s

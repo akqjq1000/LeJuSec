@@ -41,9 +41,10 @@ curl -fsSL https://<컨트롤플레인>:8000/install.sh | sudo bash -s -- --toke
 - **hostname 자동**: 등록 시 hostname을 보내지 않는다. 서버가 임시 식별자를 부여하고,
   에이전트 첫 통신(인벤토리)에서 보고된 hostname/주소(IP)로 자동 교체한다
   (`--hostname` 으로 명시 지정도 가능).
-- **헬스체크**: `lejusec-agent --heartbeat` 가 1분 주기(타이머)로 생존을 알려
-  컨트롤 플레인이 online/stale/offline 상태를 GUI에 표시한다
-  (`--heartbeat-interval`/`LEJUSEC_HEARTBEAT_INTERVAL` 로 주기 조정).
+- **헬스체크 + 명령 poll**: 1분 주기(타이머)로 `--heartbeat`(생존 신호)와 `--poll`(서버
+  큐의 검사 명령 수신·실행)을 함께 수행한다. 덕분에 GUI "검사 요청"이 약 1분 내 처리된다
+  (`--heartbeat-interval`/`LEJUSEC_HEARTBEAT_INTERVAL` 로 주기 조정). 인벤토리 수집은
+  별도 15분 주기 타이머.
 
 > **바이너리 출처**: 설치 스크립트는 ① 컨트롤 플레인(`GET /agent/...`) → ② GitHub
 > 릴리스 순으로 내려받는다. 릴리스를 아직 발행하지 않은 자체 호스팅 환경에서는 서버에서
